@@ -20,7 +20,6 @@ struct NetworkView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
-                // --- HEADER ---
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("Network Traffic")
@@ -40,18 +39,17 @@ struct NetworkView: View {
                 }
                 .padding(.bottom, 10)
                 
-                // --- BIG CARDS (DOWNLOAD & UPLOAD) ---
                 HStack(spacing: 24) {
                     
-                    // Download Card
                     VStack(alignment: .leading) {
                         HStack {
                             Text("DOWNLOAD")
                                 .font(.subheadline)
                                 .foregroundColor(.Vitals.textSecondary)
                                 .tracking(1.5)
+                            
                             Spacer()
-                            // Icon Box
+                            
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.Vitals.neonPink.opacity(0.3), lineWidth: 1)
                                 .background(Color.Vitals.neonPink.opacity(0.1))
@@ -65,7 +63,6 @@ struct NetworkView: View {
                         Spacer()
                         
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
-                            // Extract numeric part and unit
                             let components = viewModel.downloadSpeedString.split(separator: " ")
                             let number = components.first ?? "0"
                             let unit = components.count > 1 ? String(components[1]) : "B/s"
@@ -80,7 +77,6 @@ struct NetworkView: View {
                                 .foregroundColor(.Vitals.textSecondary)
                         }
                         
-                        // Fake Wave Graph
                         GeometryReader { geo in
                             Path { path in
                                 let width = geo.size.width
@@ -109,7 +105,6 @@ struct NetworkView: View {
                     .cornerRadius(16)
                     .clipped()
                     
-                    // Upload Card
                     VStack(alignment: .leading) {
                         HStack {
                             Text("UPLOAD")
@@ -216,6 +211,70 @@ struct NetworkView: View {
                     .cornerRadius(12)
                 }
                 
+                // --- NETWORK DETAILS & PER-APP USAGE ---
+                HStack(alignment: .top, spacing: 24) {
+                    
+                    // Network Details Card
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(.Vitals.textSecondary)
+                            Text("NETWORK DETAILS")
+                                .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            NetworkDetailRow(title: "SSID", value: "CyberNet-5G")
+                            Divider().background(Color.Vitals.cardBorder)
+                            NetworkDetailRow(title: "Local IP", value: "192.168.1.14")
+                            Divider().background(Color.Vitals.cardBorder)
+                            NetworkDetailRow(title: "Public IP", value: "103.22.**.***")
+                            Divider().background(Color.Vitals.cardBorder)
+                            NetworkDetailRow(title: "Gateway Ping", value: "4 ms")
+                        }
+                    }
+                    .padding(24)
+                    .frame(width: 250)
+                    .background(Color.Vitals.cardBackground)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                    .cornerRadius(16)
+                    
+                    // Per-App Usage Table
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Active Network Processes")
+                                .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
+                            Spacer()
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+                                .foregroundColor(.Vitals.textSecondary)
+                        }
+                        .padding(20)
+                        
+                        // Header
+                        HStack {
+                            Text("APP").frame(maxWidth: .infinity, alignment: .leading)
+                            Text("DOWN").frame(width: 80, alignment: .trailing)
+                            Text("UP").frame(width: 80, alignment: .trailing)
+                        }
+                        .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                        .padding(.horizontal, 20).padding(.bottom, 10)
+                        
+                        Divider().background(Color.Vitals.cardBorder)
+                        
+                        // Fake App List
+                        VStack(spacing: 0) {
+                            NetworkAppRow(name: "Google Chrome", down: "2.4 MB/s", up: "12 KB/s", color: .Vitals.neonPink)
+                            Divider().background(Color.Vitals.cardBorder)
+                            NetworkAppRow(name: "Spotify", down: "320 KB/s", up: "5 KB/s", color: .Vitals.neonTeal)
+                            Divider().background(Color.Vitals.cardBorder)
+                            NetworkAppRow(name: "Slack", down: "12 KB/s", up: "8 KB/s", color: .Vitals.neonYellow)
+                        }
+                    }
+                    .background(Color.Vitals.cardBackground)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                    .cornerRadius(16)
+                }
+                
                 Spacer()
             }
             .padding(40)
@@ -224,5 +283,55 @@ struct NetworkView: View {
         .background(Color.Vitals.background)
         .onAppear { viewModel.startMonitoring() }
         .onDisappear { viewModel.stopMonitoring() }
+    }
+}
+
+// Helper Components
+struct NetworkDetailRow: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 13, design: .rounded))
+                .foregroundColor(.Vitals.textSecondary)
+            Spacer()
+            Text(value)
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundColor(.Vitals.textPrimary)
+        }
+    }
+}
+
+struct NetworkAppRow: View {
+    let name: String
+    let down: String
+    let up: String
+    let color: Color
+    
+    var body: some View {
+        HStack {
+            HStack(spacing: 12) {
+                Image(systemName: "app.fill")
+                    .foregroundColor(color)
+                Text(name)
+                    .foregroundColor(.Vitals.textPrimary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text(down)
+                .frame(width: 80, alignment: .trailing)
+                .foregroundColor(.Vitals.neonPink)
+                .font(.system(.body, design: .monospaced))
+            
+            Text(up)
+                .frame(width: 80, alignment: .trailing)
+                .foregroundColor(.Vitals.neonTeal)
+                .font(.system(.body, design: .monospaced))
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 20)
     }
 }

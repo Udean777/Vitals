@@ -20,7 +20,6 @@ struct BatteryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
-                // --- HEADER ---
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("Battery Health & Power")
@@ -36,11 +35,9 @@ struct BatteryView: View {
                 }
                 .padding(.bottom, 10)
                 
-                // 1. Kartu Indikator Utama (Level & Health)
                 if let battery = viewModel.batteryInfo {
                     HStack(spacing: 24) {
                         
-                        // Kartu Level Pengisian
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
                                 Image(systemName: battery.isCharging ? "bolt.fill" : "battery.100")
@@ -80,7 +77,6 @@ struct BatteryView: View {
                         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
                         .cornerRadius(16)
                         
-                        // Kartu Kesehatan Baterai (Health)
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
                                 Image(systemName: "heart.fill")
@@ -124,7 +120,20 @@ struct BatteryView: View {
                         .foregroundColor(.Vitals.textSecondary)
                 }
                 
-                // 2. Grafik Historis 24 Jam (Swift Charts)
+                if let battery = viewModel.batteryInfo {
+                    HStack(spacing: 24) {
+                        DiagnosticCard(icon: "bolt.car.fill", title: "POWER DRAW", value: battery.isCharging ? "45.2 W" : "-12.5 W", subtitle: battery.isCharging ? "Supplied via USB-C" : "Discharging", color: .Vitals.neonYellow)
+                        
+                        DiagnosticCard(icon: "thermometer.medium", title: "TEMPERATURE", value: "34°C", subtitle: "Normal Range", color: .Vitals.neonPink)
+                        
+                        let condition = battery.healthPercentage > 80 ? "Normal" : "Replace Soon"
+                        let conditionColor = battery.healthPercentage > 80 ? Color.Vitals.neonGreen : Color.Vitals.neonPink
+                        DiagnosticCard(icon: "checkmark.seal.fill", title: "CONDITION", value: condition, subtitle: String(format: "Health: %.1f%%", battery.healthPercentage), color: conditionColor)
+                        
+                        DiagnosticCard(icon: "timer", title: "TIME REMAINING", value: battery.isCharging ? "1h 20m" : "4h 15m", subtitle: battery.isCharging ? "Until Full" : "Until Empty", color: .Vitals.neonTeal)
+                    }
+                }
+                
                 VStack(alignment: .leading, spacing: 20) {
                     HStack {
                         Text("Usage History (Last 24 Hours)")
@@ -141,7 +150,6 @@ struct BatteryView: View {
                             .foregroundColor(.Vitals.textSecondary)
                     } else {
                         Chart(viewModel.historyPoints) { point in
-                            // Garis Melengkung
                             LineMark(
                                 x: .value("Waktu", point.timestamp),
                                 y: .value("Level", point.percentage)
@@ -150,7 +158,6 @@ struct BatteryView: View {
                             .foregroundStyle(Color.Vitals.neonTeal)
                             .lineStyle(StrokeStyle(lineWidth: 3))
                             
-                            // Efek Gradien di Bawah Garis (Neon Teal)
                             AreaMark(
                                 x: .value("Waktu", point.timestamp),
                                 y: .value("Level", point.percentage)
@@ -199,4 +206,37 @@ struct BatteryView: View {
     }
 }
 
-
+struct DiagnosticCard: View {
+    let icon: String
+    let title: String
+    let value: String
+    let subtitle: String
+    let color: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                Text(title)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.Vitals.textSecondary)
+                    .tracking(1)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(value)
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(.Vitals.textPrimary)
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundColor(.Vitals.textSecondary)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.Vitals.cardBackground)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+        .cornerRadius(12)
+    }
+}

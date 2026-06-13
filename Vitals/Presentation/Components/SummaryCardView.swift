@@ -13,7 +13,6 @@ struct SummaryCardView: View {
     let icon: String
     let color: Color
     
-    // Optional progress for the bottom bar (0.0 to 1.0)
     var progress: Double = 0.5 
     
     var body: some View {
@@ -31,9 +30,6 @@ struct SummaryCardView: View {
             }
             
             HStack(alignment: .lastTextBaseline, spacing: 4) {
-                // We extract the numeric part and string part if needed, but for simplicity, 
-                // we'll just show the value big. If value contains space (e.g. "45° C"), we could split it, 
-                // but let's just make the whole text large and bold.
                 Text(value)
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundColor(color)
@@ -43,7 +39,6 @@ struct SummaryCardView: View {
             
             Spacer()
             
-            // Progress Bar at the bottom
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -59,15 +54,13 @@ struct SummaryCardView: View {
             .frame(height: 4)
         }
         .padding(20)
-        // Dark glass background from AppTheme
         .background(Color.Vitals.cardBackground)
-        // Border
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.Vitals.cardBorder, lineWidth: 1)
         )
         .cornerRadius(16)
         .frame(height: 120)
-        .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
     }
 }

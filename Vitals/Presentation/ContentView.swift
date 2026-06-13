@@ -34,7 +34,6 @@ struct ContentView: View {
                 Text("Pilih menu di sidebar")
             }
         }
-        .preferredColorScheme(.dark)
         .tint(.Vitals.neonTeal)
     }
 }

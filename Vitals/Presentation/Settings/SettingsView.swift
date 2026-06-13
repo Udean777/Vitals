@@ -113,7 +113,6 @@ struct SettingsView: View {
             }
         }
         .frame(width: 500, height: 300)
-        .preferredColorScheme(.dark)
     }
     
     private func toggleLaunchAtLogin(enabled: Bool) {

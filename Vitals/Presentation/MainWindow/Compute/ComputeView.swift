@@ -22,8 +22,6 @@ struct ComputeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                
-                // --- HEADER ---
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Compute & Unified Memory")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
@@ -34,9 +32,7 @@ struct ComputeView: View {
                 }
                 .padding(.bottom, 10)
                 
-                // --- TOP CARDS (CPU & RAM) ---
                 HStack(spacing: 24) {
-                    // CPU Card
                     VStack(alignment: .leading) {
                         HStack {
                             Image(systemName: "cpu")
@@ -52,7 +48,6 @@ struct ComputeView: View {
                         Spacer()
                         
                         HStack {
-                            // Circular Progress
                             ZStack {
                                 Circle().stroke(Color.Vitals.neonPink.opacity(0.2), lineWidth: 10)
                                 Circle().trim(from: 0, to: viewModel.cpuLoad / 100.0)
@@ -70,7 +65,6 @@ struct ComputeView: View {
                             
                             Spacer()
                             
-                            // Placeholder Graphic (Line Chart imitation)
                             Path { path in
                                 path.move(to: CGPoint(x: 0, y: 30))
                                 path.addLine(to: CGPoint(x: 20, y: 25))
@@ -91,7 +85,6 @@ struct ComputeView: View {
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.neonPink.opacity(0.3), lineWidth: 1))
                     .cornerRadius(16)
                     
-                    // RAM Card (Used to mimic GPU Engine layout)
                     VStack(alignment: .leading) {
                         HStack {
                             Image(systemName: "memorychip")
@@ -146,7 +139,58 @@ struct ComputeView: View {
                     .cornerRadius(16)
                 }
                 
-                // --- UNIFIED MEMORY BREAKDOWN ---
+                HStack(spacing: 24) {
+                    HStack {
+                        Image(systemName: "thermometer.sun.fill")
+                            .font(.title)
+                            .foregroundColor(.Vitals.neonYellow)
+                        VStack(alignment: .leading) {
+                            Text("THERMAL SENSORS")
+                                .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                            HStack(spacing: 12) {
+                                Text("45°C")
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                                    .foregroundColor(.Vitals.textPrimary)
+                                Text("1200 RPM")
+                                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(.Vitals.neonYellow)
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(20)
+                    .background(Color.Vitals.cardBackground)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                    .cornerRadius(12)
+                    
+                    HStack {
+                        Image(systemName: "arrow.left.arrow.right.circle.fill")
+                            .font(.title)
+                            .foregroundColor(.Vitals.neonTeal)
+                        VStack(alignment: .leading) {
+                            Text("SWAP MEMORY USAGE")
+                                .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                            HStack(spacing: 12) {
+                                Text("0.0 GB")
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                                    .foregroundColor(.Vitals.textPrimary)
+                                Text("Inactive")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 2)
+                                    .background(Color.Vitals.neonGreen.opacity(0.2))
+                                    .foregroundColor(.Vitals.neonGreen)
+                                    .cornerRadius(4)
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding(20)
+                    .background(Color.Vitals.cardBackground)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                    .cornerRadius(12)
+                }
+                
                 VStack(alignment: .leading, spacing: 16) {
                     HStack {
                         VStack(alignment: .leading) {
@@ -158,13 +202,12 @@ struct ComputeView: View {
                         Spacer()
                         HStack {
                             Image(systemName: "arrow.left.arrow.right")
-                            Text(String(format: "Swap Memory: %.1f GB", 0.0)) // Placeholder if swap isn't available
+                            Text(String(format: "Swap Memory: %.1f GB", 0.0))
                         }
                         .font(.caption).foregroundColor(.Vitals.neonTeal)
                         .padding(8).background(Color.Vitals.cardBorder).cornerRadius(8)
                     }
                     
-                    // Segmented Bar
                     GeometryReader { geo in
                         let total = max(viewModel.totalRAM, 1)
                         let appW = CGFloat(viewModel.appMemory / total) * geo.size.width
@@ -176,15 +219,14 @@ struct ComputeView: View {
                             Rectangle().fill(Color.Vitals.neonPink).frame(width: max(appW, 0))
                             Rectangle().fill(Color.Vitals.neonYellow).frame(width: max(wiredW, 0))
                             Rectangle().fill(Color.Vitals.neonTeal).frame(width: max(compW, 0))
-                            Rectangle().fill(Color(red: 0.3, green: 0.2, blue: 0.4)).frame(width: max(cacheW, 0)) // Dark purple for cache
-                            Rectangle().fill(Color.black.opacity(0.5)) // Free space
+                            Rectangle().fill(Color(red: 0.3, green: 0.2, blue: 0.4)).frame(width: max(cacheW, 0))
+                            Rectangle().fill(Color.Vitals.cardBorder)
                         }
                         .cornerRadius(8)
                     }
                     .frame(height: 20)
                     .animation(.linear(duration: 0.5), value: viewModel.usedRAM)
                     
-                    // Legend
                     HStack(spacing: 20) {
                         LegendItem(color: .Vitals.neonPink, label: "App Memory", value: viewModel.appMemory)
                         LegendItem(color: .Vitals.neonYellow, label: "Wired", value: viewModel.wiredMemory)
@@ -200,7 +242,6 @@ struct ComputeView: View {
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
                 .cornerRadius(16)
                 
-                // --- ACTIVE RESOURCE TABLE ---
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
                         Text("Active Resource Table")
@@ -213,7 +254,6 @@ struct ComputeView: View {
                     }
                     .padding(20)
                     
-                    // Table Header
                     HStack {
                         Text("PROCESS NAME").frame(maxWidth: .infinity, alignment: .leading)
                         Text("CPU (%)").frame(width: 80, alignment: .trailing)
@@ -225,7 +265,6 @@ struct ComputeView: View {
                     
                     Divider().background(Color.Vitals.cardBorder)
                     
-                    // Table Rows
                     ForEach(viewModel.topProcess) { process in
                         HStack {
                             HStack(spacing: 12) {
@@ -274,7 +313,6 @@ struct ComputeView: View {
     }
 }
 
-// Komponen Pembantu (Helper) untuk Legend
 struct LegendItem: View {
     let color: Color
     let label: String

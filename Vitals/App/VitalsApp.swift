@@ -36,61 +36,59 @@ struct VitalsApp: App {
         
         MenuBarExtra {
             VStack(alignment: .leading, spacing: 0) {
-                // --- TOP STATS (CPU, RAM, BATTERY) ---
                 HStack(spacing: 0) {
-                    // CPU
                     VStack {
-                        Text("CPU").font(.caption2).foregroundColor(.Vitals.textSecondary).tracking(1)
+                        Text("CPU").font(.caption2).foregroundColor(.secondary).tracking(1)
                         HStack(spacing: 4) {
-                            Image(systemName: "cpu").foregroundColor(.Vitals.neonTeal).font(.caption)
+                            Image(systemName: "cpu").foregroundColor(.blue).font(.caption)
                             Text(String(format: "%.0f%%", menuBarViewModel.cpuLoad))
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
                         }
                     }.frame(maxWidth: .infinity)
                     
-                    Divider().frame(height: 30).background(Color.Vitals.cardBorder)
+                    Divider().frame(height: 30)
                     
-                    // RAM
                     VStack {
-                        Text("RAM").font(.caption2).foregroundColor(.Vitals.textSecondary).tracking(1)
+                        Text("RAM").font(.caption2).foregroundColor(.secondary).tracking(1)
                         HStack(spacing: 4) {
-                            Image(systemName: "memorychip").foregroundColor(.Vitals.neonYellow).font(.caption)
+                            Image(systemName: "memorychip").foregroundColor(.purple).font(.caption)
                             Text(String(format: "%.0f", menuBarViewModel.usedRAM))
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
                             Text(String(format: "/%.0fGB", menuBarViewModel.totalRAM))
                                 .font(.system(size: 12, design: .rounded))
-                                .foregroundColor(.Vitals.textSecondary)
+                                .foregroundColor(.secondary)
                         }
                     }.frame(maxWidth: .infinity)
                     
-                    Divider().frame(height: 30).background(Color.Vitals.cardBorder)
+                    Divider().frame(height: 30)
                     
-                    // BATTERY
                     VStack {
-                        Text("BATTERY").font(.caption2).foregroundColor(.Vitals.textSecondary).tracking(1)
+                        Text("BATTERY").font(.caption2).foregroundColor(.secondary).tracking(1)
                         HStack(spacing: 4) {
                             Image(systemName: menuBarViewModel.batteryInfo?.isCharging == true ? "bolt.fill" : "battery.100")
-                                .foregroundColor(menuBarViewModel.batteryInfo?.isCharging == true ? .Vitals.neonGreen : .Vitals.neonTeal)
+                                .foregroundColor(menuBarViewModel.batteryInfo?.isCharging == true ? .green : .orange)
                                 .font(.caption)
-                            Text(String(format: "%.0f%%", menuBarViewModel.batteryInfo?.currentPercentage ?? 0))
+                            Text(String(format: "%.0f%%", menuBarViewModel.batteryInfo?.currentPercentage ?? 0.0))
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
                         }
                     }.frame(maxWidth: .infinity)
                 }
                 .padding(.vertical, 16)
-                .background(Color.Vitals.cardBackground)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
                 
-                Divider().background(Color.Vitals.cardBorder)
+                Divider()
                 
-                // --- TOP PROCESSES ---
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Image(systemName: "list.bullet")
                             .font(.caption2)
-                            .foregroundColor(.Vitals.textSecondary)
+                            .foregroundColor(.secondary)
                         Text("TOP PROCESSES")
                             .font(.caption2)
-                            .foregroundColor(.Vitals.textSecondary)
+                            .foregroundColor(.secondary)
                             .tracking(1)
                     }
                     .padding(.horizontal, 16)
@@ -98,141 +96,90 @@ struct VitalsApp: App {
                     
                     if menuBarViewModel.topProcesses.isEmpty {
                         Text("Memuat data...")
-                            .foregroundColor(.Vitals.textSecondary)
+                            .foregroundColor(.secondary)
                             .font(.subheadline)
                             .padding(.horizontal, 16)
                     } else {
                         ForEach(menuBarViewModel.topProcesses) { process in
                             HStack {
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.Vitals.cardBorder)
+                                    .fill(Color(NSColor.controlColor))
                                     .frame(width: 20, height: 20)
                                     .overlay(
                                         Image(systemName: "terminal")
                                             .font(.system(size: 10))
-                                            .foregroundColor(.Vitals.textSecondary)
+                                            .foregroundColor(.secondary)
                                     )
                                 
                                 Text(process.name)
                                     .font(.system(size: 13, design: .rounded))
-                                    .foregroundColor(.Vitals.textPrimary)
+                                    .foregroundColor(.primary)
                                     .lineLimit(1)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 
                                 Text(String(format: "%.0f%%", process.cpuUsage))
                                     .font(.system(size: 13, design: .monospaced))
-                                    .foregroundColor(process.cpuUsage > 50.0 ? .Vitals.neonPink : .Vitals.neonTeal)
+                                    .foregroundColor(process.cpuUsage > 50.0 ? .red : .primary)
                             }
                             .padding(.horizontal, 16)
                         }
                     }
-                    
-                    // --- DEVELOPER WORKLOAD (Fake Local LLM Box) ---
-                    if !menuBarViewModel.devProcesses.isEmpty {
-                        VStack(spacing: 8) {
-                            HStack {
-                                Circle().fill(Color.Vitals.neonTeal).frame(width: 6, height: 6)
-                                    .shadow(color: .Vitals.neonTeal, radius: 4)
-                                Text("Local LLM Active")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.Vitals.neonTeal)
-                                Spacer()
-                                Text("VRAM USAGE")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.Vitals.textSecondary)
-                            }
-                            HStack {
-                                Text("24 tokens/s")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.Vitals.textSecondary)
-                                Spacer()
-                                Text("4GB ")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.Vitals.textPrimary)
-                                + Text("Active")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.Vitals.neonTeal)
-                            }
-                        }
-                        .padding(12)
-                        .background(Color.Vitals.cardBackground)
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.Vitals.neonTeal.opacity(0.3), lineWidth: 1))
-                        .cornerRadius(8)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 4)
-                    }
                 }
                 
-                Divider().background(Color.Vitals.cardBorder).padding(.top, 16)
+                Divider().padding(.top, 16)
                 
-                // --- POWER STATUS ---
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "bolt.fill")
-                            .foregroundColor(.Vitals.neonYellow)
+                            .foregroundColor(.orange)
                             .font(.title3)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Power Status")
                                 .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.Vitals.textPrimary)
+                                .foregroundColor(.primary)
                             Text(menuBarViewModel.batteryInfo?.isCharging == true ? "Charging..." : "On Battery")
                                 .font(.system(size: 11))
-                                .foregroundColor(.Vitals.textSecondary)
+                                .foregroundColor(.secondary)
                         }
                         
                         Spacer()
                         
-                        Text(String(format: "%.0f%%", menuBarViewModel.batteryInfo?.currentPercentage ?? 0))
+                        Text(String(format: "%.0f%%", menuBarViewModel.batteryInfo?.currentPercentage ?? 0.0))
                             .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(.Vitals.textPrimary)
+                            .foregroundColor(.primary)
                     }
                     
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(Color.Vitals.cardBorder).frame(height: 6)
+                            Capsule().fill(Color(NSColor.separatorColor)).frame(height: 6)
                             Capsule()
-                                .fill(Color.Vitals.neonTeal)
-                                .frame(width: geo.size.width * CGFloat((menuBarViewModel.batteryInfo?.currentPercentage ?? 0) / 100.0), height: 6)
-                                .shadow(color: .Vitals.neonTeal, radius: 4)
+                                .fill(menuBarViewModel.batteryInfo?.isCharging == true ? Color.green : Color.blue)
+                                .frame(width: geo.size.width * CGFloat((menuBarViewModel.batteryInfo?.currentPercentage ?? 0.0) / 100.0), height: 6)
                         }
                     }.frame(height: 6)
                 }
                 .padding(16)
                 
-                Divider().background(Color.Vitals.cardBorder)
+                Divider()
                 
-                // --- BOTTOM ACTION BAR ---
                 HStack {
-                    Button(action: {
+                    MenuBarButton(icon: "gearshape.fill", title: "Quit", color: .red) {
                         NSApplication.shared.terminate(nil)
-                    }) {
-                        Image(systemName: "gearshape")
-                            .foregroundColor(.Vitals.textSecondary)
                     }
-                    .buttonStyle(.plain)
                     
                     Spacer()
                     
-                    Button(action: {
-                        // Open Activity Monitor
-                    }) {
-                        Text("Activity Monitor")
-                            .font(.system(size: 11))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 4)
-                            .background(Color.Vitals.cardBorder)
-                            .cornerRadius(4)
+                    MenuBarButton(icon: "waveform.path.ecg", title: "Activity Monitor", color: .blue) {
+                        NSWorkspace.shared.launchApplication("Activity Monitor")
                     }
-                    .buttonStyle(.plain)
                 }
                 .padding(12)
-                .background(Color.Vitals.cardBackground)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
                 
             }
             .frame(width: 320)
-            .background(Color.Vitals.background)
-            .preferredColorScheme(.dark)
+            .background(.regularMaterial)
             
         } label: {
             Text(menuBarViewModel.summaryText)
@@ -241,5 +188,40 @@ struct VitalsApp: App {
                 }
         }
         .menuBarExtraStyle(.window)
+    }
+}
+
+struct MenuBarButton: View {
+    var icon: String
+    var title: String
+    var color: Color
+    var action: () -> Void
+    
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+            }
+            .foregroundColor(isHovered ? color : .secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(isHovered ? color.opacity(0.15) : Color(NSColor.controlColor))
+            .cornerRadius(6)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isHovered ? color.opacity(0.5) : Color.clear, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovered = hovering
+            }
+        }
     }
 }

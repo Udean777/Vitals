@@ -92,6 +92,19 @@ struct StorageView: View {
                                     .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
                             }
                         }
+                        
+                        HStack(spacing: 16) {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.Vitals.neonYellow)
+                                .frame(width: 24, height: 24)
+                                .shadow(color: .Vitals.neonYellow, radius: 4)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("PURGEABLE").font(.subheadline).foregroundColor(.Vitals.textSecondary).tracking(1)
+                                Text(String(format: "%.1f GB", viewModel.totalDisk * 0.05)) // Mock value
+                                    .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
+                            }
+                        }
                     }
                 }
                 .padding(40)
@@ -100,10 +113,38 @@ struct StorageView: View {
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
                 .cornerRadius(16)
                 
+                // --- STACKED BAR BREAKDOWN ---
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("File Type Breakdown")
+                        .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
+                    
+                    GeometryReader { geo in
+                        HStack(spacing: 0) {
+                            Rectangle().fill(Color.Vitals.neonTeal).frame(width: geo.size.width * 0.4)
+                            Rectangle().fill(Color.Vitals.neonPink).frame(width: geo.size.width * 0.25)
+                            Rectangle().fill(Color.Vitals.neonYellow).frame(width: geo.size.width * 0.15)
+                            Rectangle().fill(Color.Vitals.cardBorder).frame(width: geo.size.width * 0.2) // Free
+                        }
+                        .cornerRadius(8)
+                    }
+                    .frame(height: 16)
+                    
+                    HStack(spacing: 20) {
+                        HStack(spacing: 6) { Circle().fill(Color.Vitals.neonTeal).frame(width: 8, height: 8); Text("Apps & Games").font(.caption).foregroundColor(.Vitals.textSecondary) }
+                        HStack(spacing: 6) { Circle().fill(Color.Vitals.neonPink).frame(width: 8, height: 8); Text("System Data").font(.caption).foregroundColor(.Vitals.textSecondary) }
+                        HStack(spacing: 6) { Circle().fill(Color.Vitals.neonYellow).frame(width: 8, height: 8); Text("Documents").font(.caption).foregroundColor(.Vitals.textSecondary) }
+                        Spacer()
+                    }
+                }
+                .padding(24)
+                .background(Color.Vitals.cardBackground)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                .cornerRadius(16)
+                
                 // --- SCANNER SECTION ---
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text("Developer Cache Scanner")
+                        Text("Deep Space Scanner (Dev Caches & Large Files)")
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.Vitals.textPrimary)
@@ -263,6 +304,27 @@ struct StorageView: View {
                                         .foregroundColor(.Vitals.neonTeal)
                                         .padding(16)
                                     }
+                                    
+                                    // LARGE FILES SECTION
+                                    Divider().background(Color.Vitals.cardBorder).padding(.bottom, 8)
+                                    
+                                    HStack {
+                                        Text("LARGE DOWNLOADS").frame(maxWidth: .infinity, alignment: .leading)
+                                        Text("SIZE").frame(width: 100, alignment: .trailing)
+                                    }
+                                    .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                                    .padding(.horizontal, 24).padding(.bottom, 8)
+                                    
+                                    Divider().background(Color.Vitals.cardBorder)
+                                    
+                                    // Mock large files
+                                    VStack(spacing: 0) {
+                                        StorageLargeFileRow(name: "Xcode_15.xip", size: "7.2 GB", color: .Vitals.neonPink)
+                                        Divider().background(Color.Vitals.cardBorder)
+                                        StorageLargeFileRow(name: "Final_Cut_Pro_Project.bundle", size: "14.5 GB", color: .Vitals.neonPink)
+                                        Divider().background(Color.Vitals.cardBorder)
+                                        StorageLargeFileRow(name: "macOS_Sonoma_Install.app", size: "12.8 GB", color: .Vitals.neonPink)
+                                    }
                                 }
                                 .background(Color.Vitals.cardBackground)
                                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
@@ -286,5 +348,31 @@ struct StorageView: View {
         formatter.allowedUnits = [.useMB, .useGB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
+    }
+}
+
+// Helper Components
+struct StorageLargeFileRow: View {
+    let name: String
+    let size: String
+    let color: Color
+    
+    var body: some View {
+        HStack {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.zipper")
+                    .foregroundColor(color)
+                Text(name)
+                    .font(.system(.body, design: .rounded))
+                    .foregroundColor(.Vitals.textPrimary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Text(size)
+                .font(.system(.body, design: .monospaced))
+                .foregroundColor(.Vitals.textSecondary)
+        }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 24)
     }
 }
