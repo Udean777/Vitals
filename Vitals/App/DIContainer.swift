@@ -15,6 +15,8 @@ final class DIContainer: ObservableObject {
     let getDeviceInfoUseCase: GetDeviceInfoUseCase
     let getBatteryInfoUseCase: GetBatteryInfoUseCase
     let getNetworkStatsUseCase: GetNetworkStatsUseCase
+    let checkFDAUseCase: CheckFDAUseCase
+    let scanDeveloperCachesUseCase: ScanDeveloperCachesUseCase
     
     init() {
         let systemStatsRepository = MacSystemStatsRepository()
@@ -31,5 +33,9 @@ final class DIContainer: ObservableObject {
         
         let networkStatsRepository = MacNetworkRepository()
         self.getNetworkStatsUseCase = GetNetworkStatsUseCaseImpl(repository: networkStatsRepository)
+        
+        let cacheScannerRepository = MacCacheScannerRepository()
+        self.checkFDAUseCase = DefaultCheckFDAUseCase(repository: cacheScannerRepository)
+        self.scanDeveloperCachesUseCase = DefaultScanDeveloperCachesUseCase(repository: cacheScannerRepository)
     }
 }

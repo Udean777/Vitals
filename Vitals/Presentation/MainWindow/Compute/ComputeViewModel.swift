@@ -14,6 +14,10 @@ final class ComputeViewModel: ObservableObject {
     @Published var usedRAM: Double = 0
     @Published var totalRAM: Double = 16
     @Published var topProcess: [ProcessEntity] = []
+    @Published var appMemory: Double = 0
+    @Published var wiredMemory: Double = 0
+    @Published var compressedMemory: Double = 0
+    @Published var cachedFiles: Double = 0
     
     private let systemStatsUseCase: SystemStatsUseCase
     private let getTopProcessesUseCase: GetTopProcessesUseCase
@@ -41,6 +45,10 @@ final class ComputeViewModel: ObservableObject {
             self.cpuLoad = stats.cpuLoad
             self.usedRAM = stats.usedRAM
             self.totalRAM = stats.totalRAM
+            self.appMemory = stats.appMemory
+            self.wiredMemory = stats.wiredMemory
+            self.compressedMemory = stats.compressedMemory
+            self.cachedFiles = stats.cachedFiles
         }
         
         self.topProcess = (try? getTopProcessesUseCase.execute(limit: 10)) ?? []

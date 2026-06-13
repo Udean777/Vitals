@@ -14,9 +14,17 @@ final class MacSystemStatsRepository: SystemStatsRepository {
     
     func getSystemUsage() throws -> SystemUsage {
         let cpuLoad = getCpuLoad()
-        let (userRAM, totalRAM) = getRAMUsage()
+        let ramData = getRAMUsage()
         
-        return SystemUsage(cpuLoad: cpuLoad, totalRAM: totalRAM, usedRAM: userRAM)
+        return SystemUsage(
+            cpuLoad: cpuLoad,
+            totalRAM: ramData.total,
+            usedRAM: ramData.used,
+            appMemory: ramData.appMem,
+            wiredMemory: ramData.wiredMem,
+            compressedMemory: ramData.compressedMem,
+            cachedFiles: ramData.cachedMem
+        )
     }
     
     private func getCpuLoad() -> Double {
@@ -44,11 +52,11 @@ final class MacSystemStatsRepository: SystemStatsRepository {
             for i in 0..<Int(numCPUsU) {
                 let inUse = Double(
                     (cpuInfo[Int(CPU_STATE_MAX) * i + Int(CPU_STATE_USER)]   - prevInfo[Int(CPU_STATE_MAX) * i +
-                      Int(CPU_STATE_USER)])
-                                            + (cpuInfo[Int(CPU_STATE_MAX) * i + Int(CPU_STATE_SYSTEM)] - prevInfo[Int(CPU_STATE_MAX) * i +
-                      Int(CPU_STATE_SYSTEM)])
-                                            + (cpuInfo[Int(CPU_STATE_MAX) * i + Int(CPU_STATE_NICE)]   - prevInfo[Int(CPU_STATE_MAX) * i +
-                      Int(CPU_STATE_NICE)])
+                                                                                        Int(CPU_STATE_USER)])
+                    + (cpuInfo[Int(CPU_STATE_MAX) * i + Int(CPU_STATE_SYSTEM)] - prevInfo[Int(CPU_STATE_MAX) * i +
+                                                                                          Int(CPU_STATE_SYSTEM)])
+                    + (cpuInfo[Int(CPU_STATE_MAX) * i + Int(CPU_STATE_NICE)]   - prevInfo[Int(CPU_STATE_MAX) * i +
+                                                                                          Int(CPU_STATE_NICE)])
                 )
                 
                 let total = inUse + Double(
@@ -69,7 +77,8 @@ final class MacSystemStatsRepository: SystemStatsRepository {
         return totalAll > 0 ? (totalInUse / totalAll) * 100.0 : 0.0
     }
     
-    private func getRAMUsage() -> (used: Double, total: Double) {
+    private func getRAMUsage() -> (used: Double, total: Double, appMem: Double, wiredMem: Double, compressedMem: Double, cachedMem:
+                                    Double) {
         var stats = vm_statistics64()
         var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
         
@@ -80,22 +89,37 @@ final class MacSystemStatsRepository: SystemStatsRepository {
         }
         
         var usedBytes: UInt64 = 0
+        var appBytes: UInt64 = 0
+        var wiredBytes: UInt64 = 0
+        var compBytes: UInt64 = 0
+        var cachedBytes: UInt64 = 0
+        
         if result == KERN_SUCCESS {
             let active = UInt64(stats.active_count)
             let wired = UInt64(stats.wire_count)
             let compressed = UInt64(stats.compressor_page_count)
+            let inactive = UInt64(stats.inactive_count)
             
-            let pages = active + wired + compressed
             let pageSize = UInt64(getpagesize())
-            usedBytes = pages * pageSize
+            
+            appBytes = active * pageSize
+            wiredBytes = wired * pageSize
+            compBytes = compressed * pageSize
+            cachedBytes = inactive * pageSize
+            
+            usedBytes = appBytes + wiredBytes + compBytes
         }
         
         let totalBytes = ProcessInfo.processInfo.physicalMemory
-        
         let gbDivisor = 1_073_741_824.0
-        let usedGB = Double(usedBytes) / gbDivisor
-        let totalGB = Double(totalBytes) / gbDivisor
         
-        return (usedGB , totalGB)
+        return (
+            used: Double(usedBytes) / gbDivisor,
+            total: Double(totalBytes) / gbDivisor,
+            appMem: Double(appBytes) / gbDivisor,
+            wiredMem: Double(wiredBytes) / gbDivisor,
+            compressedMem: Double(compBytes) / gbDivisor,
+            cachedMem: Double(cachedBytes) / gbDivisor
+        )
     }
 }

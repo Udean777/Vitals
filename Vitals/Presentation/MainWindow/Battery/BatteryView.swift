@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct BatteryView: View {
     @EnvironmentObject var diContainer: DIContainer
@@ -19,75 +20,183 @@ struct BatteryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
-                Text("Battery & Power")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                // --- HEADER ---
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Battery Health & Power")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(.Vitals.textPrimary)
+                        Image(systemName: "bolt.batteryblock.fill")
+                            .font(.title)
+                            .foregroundColor(.Vitals.neonYellow)
+                    }
+                    Text("Power Management & Diagnostics")
+                        .font(.body)
+                        .foregroundColor(.Vitals.textSecondary)
+                }
+                .padding(.bottom, 10)
                 
-                if let error = viewModel.errorMessage {
-                    Text(error).foregroundColor(.red)
-                } else if let info = viewModel.batteryInfo {
-                    HStack(spacing: 50) {
-                        ZStack {
-                            Circle()
-                                .stroke(lineWidth: 15)
-                                .opacity(0.2)
-                                .foregroundColor(info.isCharging ? .green : .blue)
+                // 1. Kartu Indikator Utama (Level & Health)
+                if let battery = viewModel.batteryInfo {
+                    HStack(spacing: 24) {
+                        
+                        // Kartu Level Pengisian
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Image(systemName: battery.isCharging ? "bolt.fill" : "battery.100")
+                                    .foregroundColor(battery.isCharging ? .Vitals.neonGreen : .Vitals.textSecondary)
+                                Text(battery.isCharging ? "Charging" : "On Battery")
+                                    .font(.subheadline)
+                                    .foregroundColor(.Vitals.textSecondary)
+                                    .tracking(1.5)
+                            }
                             
-                            Circle()
-                                .trim(from: 0.0, to: CGFloat(info.currentPercentage / 100.0))
-                                .stroke(style: StrokeStyle(lineWidth: 15, lineCap: .round))
-                                .foregroundColor(info.isCharging ? .green : .blue)
-                                .rotationEffect(Angle(degrees: 270.0))
-                                .animation(.easeInOut, value: info.currentPercentage)
+                            Spacer()
                             
-                            VStack {
-                                Text(String(format: "%.0f%%", info.currentPercentage))
-                                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                                
-                                Text(info.isCharging ? "Charging" : "On Battery")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text("\(Int(battery.currentPercentage))")
+                                    .font(.system(size: 56, weight: .bold, design: .rounded))
+                                    .foregroundColor(.Vitals.textPrimary)
+                                    .contentTransition(.numericText())
+                                Text("%")
+                                    .font(.title3)
+                                    .foregroundColor(.Vitals.textSecondary)
+                            }
+                            
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(Color.Vitals.cardBorder).frame(height: 8)
+                                    Capsule()
+                                        .fill(battery.currentPercentage < 20 && !battery.isCharging ? Color.Vitals.neonPink : Color.Vitals.neonTeal)
+                                        .frame(width: geo.size.width * CGFloat(battery.currentPercentage / 100.0), height: 8)
+                                        .shadow(color: battery.currentPercentage < 20 && !battery.isCharging ? .Vitals.neonPink : .Vitals.neonTeal, radius: 4)
+                                }
+                            }.frame(height: 8)
+                        }
+                        .padding(24)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: 180)
+                        .background(Color.Vitals.cardBackground)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                        .cornerRadius(16)
+                        
+                        // Kartu Kesehatan Baterai (Health)
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Image(systemName: "heart.fill")
+                                    .foregroundColor(.Vitals.neonPink)
+                                Text("HEALTH STATUS")
+                                    .font(.subheadline)
+                                    .foregroundColor(.Vitals.textSecondary)
+                                    .tracking(1.5)
+                            }
+                            
+                            Spacer()
+                            
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text("\(Int(battery.healthPercentage))")
+                                    .font(.system(size: 56, weight: .bold, design: .rounded))
+                                    .foregroundColor(.Vitals.textPrimary)
+                                Text("%")
+                                    .font(.title3)
+                                    .foregroundColor(.Vitals.textSecondary)
+                            }
+                            
+                            HStack {
+                                Text("Charge Cycles:")
+                                    .font(.subheadline)
+                                    .foregroundColor(.Vitals.textSecondary)
+                                Text("\(battery.cycleCount)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.Vitals.neonYellow)
                             }
                         }
-                        .frame(width: 160, height: 160)
+                        .padding(24)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: 180)
+                        .background(Color.Vitals.cardBackground)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                        .cornerRadius(16)
                         
-                        VStack(alignment: .leading, spacing: 18) {
-                            DetailRow(title: "Battery Health", value: String(format: "%.1f%%", info.healthPercentage))
-                            DetailRow(title: "Cycle Count", value: "\(info.cycleCount) cycles")
-                            DetailRow(title: "Current Capacity", value: "\(info.currentCapacity) mAh")
-                            DetailRow(title: "Maximum Capacity", value: "\(info.maxCapacity) mAh")
-                            DetailRow(title: "Design Capacity", value: "\(info.designCapacity) mAh")
-                        }
-                        .frame(maxWidth: .infinity)
                     }
-                    .padding(40)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(20)
-                    .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 3)
                 } else {
-                    ProgressView("Membaca sensor baterai...")
+                    Text("Memuat data sensor baterai...")
+                        .foregroundColor(.Vitals.textSecondary)
                 }
+                
+                // 2. Grafik Historis 24 Jam (Swift Charts)
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack {
+                        Text("Usage History (Last 24 Hours)")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(.Vitals.textPrimary)
+                        Spacer()
+                        Image(systemName: "chart.xyaxis.line")
+                            .foregroundColor(.Vitals.neonTeal)
+                    }
+                    
+                    if viewModel.historyPoints.isEmpty {
+                        Text("Belum ada data historis yang terkumpul.")
+                            .foregroundColor(.Vitals.textSecondary)
+                    } else {
+                        Chart(viewModel.historyPoints) { point in
+                            // Garis Melengkung
+                            LineMark(
+                                x: .value("Waktu", point.timestamp),
+                                y: .value("Level", point.percentage)
+                            )
+                            .interpolationMethod(.monotone)
+                            .foregroundStyle(Color.Vitals.neonTeal)
+                            .lineStyle(StrokeStyle(lineWidth: 3))
+                            
+                            // Efek Gradien di Bawah Garis (Neon Teal)
+                            AreaMark(
+                                x: .value("Waktu", point.timestamp),
+                                y: .value("Level", point.percentage)
+                            )
+                            .interpolationMethod(.monotone)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.Vitals.neonTeal.opacity(0.4), Color.clear]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                        }
+                        .chartYScale(domain: 0...100)
+                        .frame(height: 250)
+                        .padding(.top, 10)
+                        .chartYAxis {
+                            AxisMarks(position: .leading) { _ in
+                                AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
+                                AxisTick().foregroundStyle(Color.Vitals.textSecondary)
+                                AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                            }
+                        }
+                        .chartXAxis {
+                            AxisMarks() { _ in
+                                AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
+                                AxisTick().foregroundStyle(Color.Vitals.textSecondary)
+                                AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                            }
+                        }
+                    }
+                }
+                .padding(30)
+                .background(Color.Vitals.cardBackground)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                .cornerRadius(16)
                 
                 Spacer()
             }
-            .padding(30)
+            .padding(40)
         }
+        .frame(minWidth: 800, minHeight: 600)
+        .background(Color.Vitals.background)
         .onAppear { viewModel.startMonitoring() }
         .onDisappear { viewModel.stopMonitoring() }
     }
 }
 
 
-struct DetailRow: View {
-    let title: String
-    let value: String
-    
-    var body: some View {
-        HStack {
-            Text(title).foregroundColor(.secondary)
-            Spacer()
-            Text(value).fontWeight(.semibold)
-        }
-        Divider()
-    }
-}
