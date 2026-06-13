@@ -1,0 +1,34 @@
+# Mac OS
+.DS_Store
+
+# Xcode - Folder Build & Cache
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode - Pengaturan Personal / User-Specific
+# (Penting agar tampilan Xcode Anda tidak bentrok jika dipush ke tim)
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Swift Package Manager (SPM)
+.build/
+.swiftpm/
+Packages/
+Package.pins
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Crashlytics & Analytics (Jika ada)
+crashlytics-build.properties
