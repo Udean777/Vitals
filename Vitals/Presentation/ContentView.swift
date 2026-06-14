@@ -16,6 +16,7 @@ struct ContentView: View {
                 NavigationLink(value: item) {
                     Label(item.rawValue, systemImage: item.iconName)
                         .font(.system(.body, design: .rounded))
+                        .padding(.vertical, 4)
                 }
             }
             .navigationTitle("Vitals")
@@ -33,6 +34,7 @@ struct ContentView: View {
                 Text("Pilih menu di sidebar")
             }
         }
+        .tint(.Vitals.neonTeal)
     }
 }
 

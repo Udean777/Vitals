@@ -16,7 +16,6 @@ enum SidebarItem: String, CaseIterable, Identifiable {
     
     var id: String { self.rawValue }
     
-    // Ikon SF Symbols untuk masing-masing menu
     var iconName: String {
         switch self {
         case .overview: return "square.grid.2x2"

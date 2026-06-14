@@ -13,30 +13,54 @@ struct SummaryCardView: View {
     let icon: String
     let color: Color
     
+    var progress: Double = 0.5 
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .font(.system(size: 20))
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundColor(.Vitals.textSecondary)
                 
                 Spacer()
+                
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .font(.system(size: 16, weight: .bold))
             }
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(value)
-                    .font(.title3)
-                    .fontWeight(.bold)
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .foregroundColor(color)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
             }
+            
+            Spacer()
+            
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(color.opacity(0.15))
+                        .frame(height: 4)
+                    
+                    Capsule()
+                        .fill(color)
+                        .frame(width: geo.size.width * CGFloat(progress), height: 4)
+                        .shadow(color: color.opacity(0.8), radius: 4, x: 0, y: 0)
+                }
+            }
+            .frame(height: 4)
         }
-        .padding()
-        .background(Color(NSColor.controlBackgroundColor))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        .padding(20)
+        .background(Color.Vitals.cardBackground)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.Vitals.cardBorder, lineWidth: 1)
+        )
+        .cornerRadius(16)
+        .frame(height: 120)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
     }
 }

@@ -13,89 +13,366 @@ struct StorageView: View {
     
     init() {
         let container = DIContainer()
-        _viewModel = StateObject(wrappedValue: StorageViewModel(getDeviceInfoUseCase: container.getDeviceInfoUseCase))
+        _viewModel = StateObject(wrappedValue: StorageViewModel(
+            getDeviceInfoUseCase: container.getDeviceInfoUseCase,
+            checkFDAUseCase: container.checkFDAUseCase,
+            scanDeveloperCachesUseCase: container.scanDeveloperCachesUseCase
+        ))
     }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
-                Text("Storage Analyzer")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                // --- HEADER ---
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Storage Analyzer")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(.Vitals.textPrimary)
+                        Image(systemName: "internaldrive.fill")
+                            .font(.title)
+                            .foregroundColor(.Vitals.neonTeal)
+                    }
+                    Text("Deep Space File System & Cleanup")
+                        .font(.body)
+                        .foregroundColor(.Vitals.textSecondary)
+                }
+                .padding(.bottom, 10)
                 
+                // --- DISK USAGE CARD ---
                 HStack(spacing: 50) {
                     ZStack {
                         Circle()
-                            .stroke(lineWidth: 35)
-                            .foregroundColor(.green.opacity(0.2))
+                            .stroke(Color.Vitals.cardBorder, lineWidth: 35)
                         
+                        let ratio = viewModel.totalDisk > 0 ? (viewModel.usedDisk / viewModel.totalDisk) : 0
                         Circle()
-                            .trim(from: 0.0, to: CGFloat(viewModel.usedDisk / viewModel.totalDisk))
-                            .stroke(style: StrokeStyle(lineWidth: 35, lineCap: .butt))
-                            .foregroundColor(.blue)
+                            .trim(from: 0.0, to: CGFloat(ratio))
+                            .stroke(Color.Vitals.neonTeal, style: StrokeStyle(lineWidth: 35, lineCap: .round))
                             .rotationEffect(Angle(degrees: -90))
                             .animation(.easeOut(duration: 1.5), value: viewModel.usedDisk)
+                            .shadow(color: .Vitals.neonTeal, radius: 10)
                         
                         VStack {
                             Text(String(format: "%.0f GB", viewModel.totalDisk))
                                 .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .foregroundColor(.Vitals.textPrimary)
                             
-                            Text("Total SSD")
+                            Text("TOTAL SSD")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.Vitals.textSecondary)
+                                .tracking(1)
                         }
                     }
                     .frame(width: 220, height: 220)
                     .padding(20)
                     
                     VStack(alignment: .leading, spacing: 25) {
-                        HStack(spacing: 12) {
-                            RoundedRectangle(cornerRadius: 4).fill(Color.blue).frame(width: 20, height: 20)
+                        HStack(spacing: 16) {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.Vitals.neonTeal)
+                                .frame(width: 24, height: 24)
+                                .shadow(color: .Vitals.neonTeal, radius: 4)
                             
-                            VStack(alignment: .leading) {
-                                Text("Used Space").font(.headline)
-                                
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("USED SPACE").font(.subheadline).foregroundColor(.Vitals.textSecondary).tracking(1)
                                 Text(String(format: "%.1f GB", viewModel.usedDisk))
-                                    .font(.subheadline).foregroundColor(.secondary)
+                                    .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
                             }
                         }
                         
-                        HStack(spacing: 12) {
-                            RoundedRectangle(cornerRadius: 4).fill(Color.green.opacity(0.2)).frame(width: 20, height: 20)
+                        HStack(spacing: 16) {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.Vitals.cardBorder)
+                                .frame(width: 24, height: 24)
                             
-                            VStack(alignment: .leading) {
-                                Text("Free Space").font(.headline)
-                                
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("FREE SPACE").font(.subheadline).foregroundColor(.Vitals.textSecondary).tracking(1)
                                 Text(String(format: "%.1f GB", viewModel.freeDisk))
-                                    .font(.subheadline).foregroundColor(.secondary)
+                                    .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
+                            }
+                        }
+                        
+                        HStack(spacing: 16) {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.Vitals.neonYellow)
+                                .frame(width: 24, height: 24)
+                                .shadow(color: .Vitals.neonYellow, radius: 4)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("PURGEABLE").font(.subheadline).foregroundColor(.Vitals.textSecondary).tracking(1)
+                                Text(String(format: "%.1f GB", viewModel.totalDisk * 0.05)) // Mock value
+                                    .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
                             }
                         }
                     }
                 }
                 .padding(40)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(NSColor.controlBackgroundColor))
+                .background(Color.Vitals.cardBackground)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
                 .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
                 
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Junk & Cache Scanner")
-                        .font(.title2)
-                        .fontWeight(.semibold)
+                // --- STACKED BAR BREAKDOWN ---
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("File Type Breakdown")
+                        .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
                     
-                    Text("Fitur pemindai *developer cache* (seperti Xcode DerivedData atau Gradle Cache) akan dikembangkan nanti, karena membutuhkan layar onboarding khusus untuk meminta perizinan privasi *Full Disk Access* dari macOS.")
-                        .foregroundColor(.secondary)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.orange.opacity(0.1))
+                    GeometryReader { geo in
+                        HStack(spacing: 0) {
+                            Rectangle().fill(Color.Vitals.neonTeal).frame(width: geo.size.width * 0.4)
+                            Rectangle().fill(Color.Vitals.neonPink).frame(width: geo.size.width * 0.25)
+                            Rectangle().fill(Color.Vitals.neonYellow).frame(width: geo.size.width * 0.15)
+                            Rectangle().fill(Color.Vitals.cardBorder).frame(width: geo.size.width * 0.2) // Free
+                        }
                         .cornerRadius(8)
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.orange.opacity(0.4), lineWidth: 1))
+                    }
+                    .frame(height: 16)
+                    
+                    HStack(spacing: 20) {
+                        HStack(spacing: 6) { Circle().fill(Color.Vitals.neonTeal).frame(width: 8, height: 8); Text("Apps & Games").font(.caption).foregroundColor(.Vitals.textSecondary) }
+                        HStack(spacing: 6) { Circle().fill(Color.Vitals.neonPink).frame(width: 8, height: 8); Text("System Data").font(.caption).foregroundColor(.Vitals.textSecondary) }
+                        HStack(spacing: 6) { Circle().fill(Color.Vitals.neonYellow).frame(width: 8, height: 8); Text("Documents").font(.caption).foregroundColor(.Vitals.textSecondary) }
+                        Spacer()
+                    }
+                }
+                .padding(24)
+                .background(Color.Vitals.cardBackground)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                .cornerRadius(16)
+                
+                // --- SCANNER SECTION ---
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("Deep Space Scanner (Dev Caches & Large Files)")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.Vitals.textPrimary)
+                        Spacer()
+                        
+                        if viewModel.hasFDA && !viewModel.isScanning && !viewModel.cacheItems.isEmpty {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                Text("Terdeteksi: \(viewModel.totalCacheSavedString)")
+                            }
+                            .font(.headline)
+                            .foregroundColor(.Vitals.neonPink)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.Vitals.neonPink.opacity(0.15))
+                            .cornerRadius(8)
+                        }
+                    }
+                    
+                    if !viewModel.hasFDA {
+                        // --- FDA PERMISSION REQUIRED BANNER ---
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack(spacing: 16) {
+                                Image(systemName: "lock.shield.fill")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.Vitals.neonYellow)
+                                    .shadow(color: .Vitals.neonYellow, radius: 10)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Akses Disk Diperlukan (Full Disk Access)")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.Vitals.neonYellow)
+                                    Text("Vitals memerlukan izin privasi khusus untuk dapat menembus folder rahasia milik Xcode dan Android Studio.")
+                                        .font(.subheadline)
+                                        .foregroundColor(.Vitals.textSecondary)
+                                }
+                            }
+                            
+                            HStack(spacing: 16) {
+                                Button(action: {
+                                    viewModel.openPrivacySettings()
+                                }) {
+                                    Label("Buka Pengaturan", systemImage: "gearshape.fill")
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(Color.Vitals.neonYellow)
+                                .foregroundColor(.black)
+                                
+                                Button(action: {
+                                    viewModel.openAppLocation()
+                                }) {
+                                    Label("1. Temukan App Vitals", systemImage: "magnifyingglass")
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(Color.Vitals.textSecondary)
+                                
+                                Button(action: {
+                                    viewModel.checkFDA()
+                                }) {
+                                    Label("2. Cek Ulang Izin", systemImage: "arrow.clockwise")
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(Color.Vitals.textSecondary)
+                            }
+                            .padding(.top, 5)
+                        }
+                        .padding(24)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.Vitals.neonYellow.opacity(0.05))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.neonYellow.opacity(0.3), lineWidth: 1))
+                        .cornerRadius(16)
+                        
+                    } else {
+                        // --- CACHE RESULTS / SCANNING STATE ---
+                        VStack(alignment: .leading, spacing: 15) {
+                            if viewModel.isScanning {
+                                HStack(spacing: 15) {
+                                    ProgressView()
+                                        .tint(Color.Vitals.neonTeal)
+                                        .scaleEffect(0.8)
+                                    Text("Menganalisis jutaan file developer... (mungkin memakan waktu 5-15 detik)")
+                                        .foregroundColor(.Vitals.neonTeal)
+                                }
+                                .padding(24)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.Vitals.cardBackground)
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                                .cornerRadius(12)
+                            } else if viewModel.cacheItems.isEmpty {
+                                HStack {
+                                    Text("Klik untuk mencari file sisa dari Xcode atau Android.")
+                                        .foregroundColor(.Vitals.textSecondary)
+                                    Spacer()
+                                    Button(action: {
+                                        viewModel.startScan()
+                                    }) {
+                                        Label("Scan Sekarang", systemImage: "magnifyingglass")
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 8)
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(Color.Vitals.neonTeal)
+                                    .foregroundColor(.black)
+                                    .cornerRadius(8)
+                                }
+                                .padding(24)
+                                .background(Color.Vitals.cardBackground)
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                                .cornerRadius(12)
+                            } else {
+                                VStack(spacing: 0) {
+                                    HStack {
+                                        Text("DIRECTORY").frame(maxWidth: .infinity, alignment: .leading)
+                                        Text("SIZE").frame(width: 100, alignment: .trailing)
+                                    }
+                                    .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                                    .padding(.horizontal, 24).padding(.vertical, 16)
+                                    
+                                    Divider().background(Color.Vitals.cardBorder)
+                                    
+                                    ForEach(viewModel.cacheItems) { item in
+                                        HStack {
+                                            HStack(spacing: 12) {
+                                                Image(systemName: "folder.fill")
+                                                    .foregroundColor(item.sizeBytes > 1_000_000_000 ? .Vitals.neonPink : .Vitals.neonTeal)
+                                                Text(item.name)
+                                                    .font(.system(.body, design: .rounded))
+                                                    .foregroundColor(.Vitals.textPrimary)
+                                            }
+                                            Spacer()
+                                            Text(formatBytes(item.sizeBytes))
+                                                .font(.system(.body, design: .monospaced))
+                                                .foregroundColor(item.sizeBytes > 1_000_000_000 ? .Vitals.neonPink : .Vitals.textSecondary)
+                                        }
+                                        .padding(.vertical, 16)
+                                        .padding(.horizontal, 24)
+                                        
+                                        Divider().background(Color.Vitals.cardBorder)
+                                    }
+                                    
+                                    HStack {
+                                        Spacer()
+                                        Button(action: {
+                                            viewModel.startScan()
+                                        }) {
+                                            Label("Scan Ulang", systemImage: "arrow.clockwise")
+                                                .font(.subheadline)
+                                        }
+                                        .buttonStyle(.borderless)
+                                        .foregroundColor(.Vitals.neonTeal)
+                                        .padding(16)
+                                    }
+                                    
+                                    // LARGE FILES SECTION
+                                    Divider().background(Color.Vitals.cardBorder).padding(.bottom, 8)
+                                    
+                                    HStack {
+                                        Text("LARGE DOWNLOADS").frame(maxWidth: .infinity, alignment: .leading)
+                                        Text("SIZE").frame(width: 100, alignment: .trailing)
+                                    }
+                                    .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                                    .padding(.horizontal, 24).padding(.bottom, 8)
+                                    
+                                    Divider().background(Color.Vitals.cardBorder)
+                                    
+                                    // Mock large files
+                                    VStack(spacing: 0) {
+                                        StorageLargeFileRow(name: "Xcode_15.xip", size: "7.2 GB", color: .Vitals.neonPink)
+                                        Divider().background(Color.Vitals.cardBorder)
+                                        StorageLargeFileRow(name: "Final_Cut_Pro_Project.bundle", size: "14.5 GB", color: .Vitals.neonPink)
+                                        Divider().background(Color.Vitals.cardBorder)
+                                        StorageLargeFileRow(name: "macOS_Sonoma_Install.app", size: "12.8 GB", color: .Vitals.neonPink)
+                                    }
+                                }
+                                .background(Color.Vitals.cardBackground)
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                                .cornerRadius(12)
+                            }
+                        }
+                    }
                 }
                 .padding(.top, 20)
                 
                 Spacer()
             }
-            .padding(30)
+            .padding(40)
         }
+        .frame(minWidth: 800, minHeight: 600)
+        .background(Color.Vitals.background)
+    }
+    
+    private func formatBytes(_ bytes: UInt64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(bytes))
+    }
+}
+
+// Helper Components
+struct StorageLargeFileRow: View {
+    let name: String
+    let size: String
+    let color: Color
+    
+    var body: some View {
+        HStack {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.zipper")
+                    .foregroundColor(color)
+                Text(name)
+                    .font(.system(.body, design: .rounded))
+                    .foregroundColor(.Vitals.textPrimary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Text(size)
+                .font(.system(.body, design: .monospaced))
+                .foregroundColor(.Vitals.textSecondary)
+        }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 24)
     }
 }
