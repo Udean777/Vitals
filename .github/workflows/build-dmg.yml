@@ -1,11 +1,13 @@
-name: Build Unsigned DMG
+name: Build & Release Unsigned DMG
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch: # Memungkinkan trigger manual dari GitHub UI
+    tags:
+      - 'v*' # Otomatis build dan release saat Anda membuat tag (contoh: git tag v1.0.0)
+  workflow_dispatch: # Tetap bisa dijalankan manual
+
+permissions:
+  contents: write # Diperlukan untuk membuat Release di GitHub
 
 jobs:
   build:
@@ -34,11 +36,12 @@ jobs:
 
     - name: Create DMG
       run: |
-        # Mengambil file .app dari hasil archive
         APP_PATH="build/Vitals.xcarchive/Products/Applications/Vitals.app"
-        
-        # Ekstrak versi dari Info.plist (opsional, untuk nama file DMG)
         APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP_PATH/Contents/Info.plist")
+        
+        # Ekspor nama DMG ke Environment Variable agar terbaca di step berikutnya
+        DMG_NAME="Vitals-v$APP_VERSION-Unsigned.dmg"
+        echo "DMG_NAME=$DMG_NAME" >> $GITHUB_ENV
         
         create-dmg \
           --volname "Vitals Installer" \
@@ -48,12 +51,13 @@ jobs:
           --icon "Vitals.app" 150 190 \
           --hide-extension "Vitals.app" \
           --app-drop-link 450 190 \
-          "Vitals-v$APP_VERSION-Unsigned.dmg" \
+          "$DMG_NAME" \
           "$APP_PATH"
 
-    - name: Upload DMG Artifact
-      uses: actions/upload-artifact@v4
+    - name: Publish to GitHub Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
       with:
-        name: Vitals-DMG
-        path: "*.dmg"
-        retention-days: 7
+        files: ${{ env.DMG_NAME }}
+        generate_release_notes: true
+
