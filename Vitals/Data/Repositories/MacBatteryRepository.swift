@@ -30,13 +30,24 @@ final class MacBatteryRepository: BatteryRepository {
         let designCap = extractInt(from: output, key: "\"DesignCapacity\"") ?? 100
         let cycleCount = extractInt(from: output, key: "\"CycleCount\"") ?? 0
         let isChargingStr = extractString(from: output, key: "\"IsCharging\"") ?? "No"
+        let timeRemaining = extractInt(from: output, key: "\"TimeRemaining\"") ?? 0
+        
+        let tempRaw = extractInt(from: output, key: "\"Temperature\"") ?? 0
+        let tempCelsius = tempRaw > 0 ? (Double(tempRaw) / 10.0) - 273.15 : 0.0
+        
+        let amperage = extractInt64(from: output, key: "\"Amperage\"") ?? 0
+        let voltage = extractInt64(from: output, key: "\"Voltage\"") ?? 0
+        let powerDraw = (Double(amperage) / 1000.0) * (Double(voltage) / 1000.0)
         
         return BatteryInfo(
             currentCapacity: currentCap,
             maxCapacity: maxCap,
             designCapacity: designCap,
             cycleCount: cycleCount,
-            isCharging: (isChargingStr == "Yes" || isChargingStr == "true")
+            isCharging: (isChargingStr == "Yes" || isChargingStr == "true"),
+            temperature: tempCelsius,
+            powerDraw: powerDraw,
+            timeRemaining: timeRemaining
         )
     }
     
@@ -49,6 +60,19 @@ final class MacBatteryRepository: BatteryRepository {
             return Int(valueStr)
         }
         
+        return nil
+    }
+    
+    private func extractInt64(from text: String, key: String) -> Int64? {
+        guard let range = text.range(of: "\(key) = ") else { return nil }
+        let substring = text[range.upperBound...]
+        if let endRange = substring.range(of: "\n") {
+            let valueStr = substring[..<endRange.lowerBound].trimmingCharacters(in: .whitespaces)
+            if let uintVal = UInt64(valueStr) {
+                return Int64(bitPattern: uintVal)
+            }
+            return Int64(valueStr)
+        }
         return nil
     }
     

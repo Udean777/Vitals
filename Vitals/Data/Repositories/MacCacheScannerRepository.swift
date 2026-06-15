@@ -16,8 +16,13 @@ final class MacCacheScannerRepository: CacheScannerRepository {
     private let fileManager = FileManager.default
     
     func hasFullDiskAccess() -> Bool {
-        let testPath = NSHomeDirectory() + "/Library/Messages"
-        return fileManager.isReadableFile(atPath: testPath)
+        let testPaths = [
+            NSHomeDirectory() + "/Library/Messages/chat.db",
+            NSHomeDirectory() + "/Library/Safari/Bookmarks.plist",
+            "/Library/Application Support/com.apple.TCC/TCC.db"
+        ]
+        
+        return testPaths.contains { fileManager.isReadableFile(atPath: $0) }
     }
     
     func scanDeveloperCaches() async -> [CacheItem] {

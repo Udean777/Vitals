@@ -18,6 +18,8 @@ final class ComputeViewModel: ObservableObject {
     @Published var wiredMemory: Double = 0
     @Published var compressedMemory: Double = 0
     @Published var cachedFiles: Double = 0
+    @Published var swapUsed: Double = 0.0
+    @Published var thermalState: String = "Normal"
     
     private let systemStatsUseCase: SystemStatsUseCase
     private let getTopProcessesUseCase: GetTopProcessesUseCase
@@ -49,6 +51,8 @@ final class ComputeViewModel: ObservableObject {
             self.wiredMemory = stats.wiredMemory
             self.compressedMemory = stats.compressedMemory
             self.cachedFiles = stats.cachedFiles
+            self.swapUsed = stats.swapUsed
+            self.thermalState = stats.thermalState
         }
         
         self.topProcess = (try? getTopProcessesUseCase.execute(limit: 10)) ?? []

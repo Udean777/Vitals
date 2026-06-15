@@ -14,7 +14,10 @@ struct NetworkView: View {
     init() {
         let container = DIContainer()
         
-        _viewModel = StateObject(wrappedValue: NetworkViewModel(getNetworkStatsUseCase: container.getNetworkStatsUseCase))
+        _viewModel = StateObject(wrappedValue: NetworkViewModel(
+            getNetworkStatsUseCase: container.getNetworkStatsUseCase,
+            getNetworkAppsUseCase: container.getNetworkAppsUseCase
+        ))
     }
     
     var body: some View {
@@ -78,24 +81,36 @@ struct NetworkView: View {
                         }
                         
                         GeometryReader { geo in
+                            let width = geo.size.width
+                            let height = geo.size.height
+                            let history = viewModel.downloadHistory
+                            let maxVal = max(viewModel.maxDownload, 1.0)
+                            let step = width / CGFloat(max(history.count - 1, 1))
+                            
                             Path { path in
-                                let width = geo.size.width
-                                let height = geo.size.height
                                 path.move(to: CGPoint(x: 0, y: height))
-                                path.addCurve(to: CGPoint(x: width * 0.4, y: height * 0.3),
-                                              control1: CGPoint(x: width * 0.15, y: height),
-                                              control2: CGPoint(x: width * 0.25, y: height * 0.3))
-                                path.addCurve(to: CGPoint(x: width, y: height * 0.8),
-                                              control1: CGPoint(x: width * 0.7, y: height * 0.3),
-                                              control2: CGPoint(x: width * 0.8, y: height * 0.8))
+                                for (index, value) in history.enumerated() {
+                                    let x = CGFloat(index) * step
+                                    let normalizedY = height - (CGFloat(value / maxVal) * height)
+                                    path.addLine(to: CGPoint(x: x, y: normalizedY))
+                                }
                                 path.addLine(to: CGPoint(x: width, y: height))
                                 path.closeSubpath()
                             }
-                            .fill(LinearGradient(gradient: Gradient(colors: [Color.Vitals.neonPink.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                            .fill(LinearGradient(gradient: Gradient(colors: [Color.Vitals.neonPink.opacity(0.4), Color.clear]),
+                                                 startPoint: .top, endPoint: .bottom))
+                            .overlay(
+                                Path { path in
+                                    for (index, value) in history.enumerated() {
+                                        let x = CGFloat(index) * step
+                                        let normalizedY = height - (CGFloat(value / maxVal) * height)
+                                        if index == 0 { path.move(to: CGPoint(x: x, y: normalizedY)) }
+                                        else { path.addLine(to: CGPoint(x: x, y: normalizedY)) }
+                                    }
+                                }
+                                    .stroke(Color.Vitals.neonPink, lineWidth: 2)
+                            )
                         }
-                        .frame(height: 60)
-                        .padding(.horizontal, -24)
-                        .padding(.bottom, -24)
                     }
                     .padding(24)
                     .frame(height: 220)
@@ -112,7 +127,6 @@ struct NetworkView: View {
                                 .foregroundColor(.Vitals.textSecondary)
                                 .tracking(1.5)
                             Spacer()
-                            // Icon Box
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.Vitals.neonTeal.opacity(0.3), lineWidth: 1)
                                 .background(Color.Vitals.neonTeal.opacity(0.1))
@@ -140,26 +154,37 @@ struct NetworkView: View {
                                 .foregroundColor(.Vitals.textSecondary)
                         }
                         
-                        // Fake Wave Graph
                         GeometryReader { geo in
+                            let width = geo.size.width
+                            let height = geo.size.height
+                            let history = viewModel.uploadHistory
+                            let maxVal = max(viewModel.maxUpload, 1.0)
+                            let step = width / CGFloat(max(history.count - 1, 1))
+                            
                             Path { path in
-                                let width = geo.size.width
-                                let height = geo.size.height
                                 path.move(to: CGPoint(x: 0, y: height))
-                                path.addCurve(to: CGPoint(x: width * 0.5, y: height * 0.5),
-                                              control1: CGPoint(x: width * 0.2, y: height),
-                                              control2: CGPoint(x: width * 0.3, y: height * 0.5))
-                                path.addCurve(to: CGPoint(x: width, y: height * 0.2),
-                                              control1: CGPoint(x: width * 0.7, y: height * 0.5),
-                                              control2: CGPoint(x: width * 0.8, y: height * 0.2))
+                                for (index, value) in history.enumerated() {
+                                    let x = CGFloat(index) * step
+                                    let normalizedY = height - (CGFloat(value / maxVal) * height)
+                                    path.addLine(to: CGPoint(x: x, y: normalizedY))
+                                }
                                 path.addLine(to: CGPoint(x: width, y: height))
                                 path.closeSubpath()
                             }
-                            .fill(LinearGradient(gradient: Gradient(colors: [Color.Vitals.neonTeal.opacity(0.3), Color.clear]), startPoint: .top, endPoint: .bottom))
+                            .fill(LinearGradient(gradient: Gradient(colors: [Color.Vitals.neonTeal.opacity(0.4), Color.clear]),
+                                                 startPoint: .top, endPoint: .bottom))
+                            .overlay(
+                                Path { path in
+                                    for (index, value) in history.enumerated() {
+                                        let x = CGFloat(index) * step
+                                        let normalizedY = height - (CGFloat(value / maxVal) * height)
+                                        if index == 0 { path.move(to: CGPoint(x: x, y: normalizedY)) }
+                                        else { path.addLine(to: CGPoint(x: x, y: normalizedY)) }
+                                    }
+                                }
+                                    .stroke(Color.Vitals.neonTeal, lineWidth: 2)
+                            )
                         }
-                        .frame(height: 60)
-                        .padding(.horizontal, -24)
-                        .padding(.bottom, -24)
                     }
                     .padding(24)
                     .frame(height: 220)
@@ -170,7 +195,6 @@ struct NetworkView: View {
                     .clipped()
                 }
                 
-                // --- SMALL CARDS (TOTAL DATA) ---
                 HStack(spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
@@ -211,10 +235,8 @@ struct NetworkView: View {
                     .cornerRadius(12)
                 }
                 
-                // --- NETWORK DETAILS & PER-APP USAGE ---
                 HStack(alignment: .top, spacing: 24) {
                     
-                    // Network Details Card
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Image(systemName: "info.circle")
@@ -224,13 +246,13 @@ struct NetworkView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 12) {
-                            NetworkDetailRow(title: "SSID", value: "CyberNet-5G")
+                            NetworkDetailRow(title: "SSID", value: viewModel.ssid)
                             Divider().background(Color.Vitals.cardBorder)
-                            NetworkDetailRow(title: "Local IP", value: "192.168.1.14")
+                            NetworkDetailRow(title: "Local IP", value: viewModel.localIP)
                             Divider().background(Color.Vitals.cardBorder)
-                            NetworkDetailRow(title: "Public IP", value: "103.22.**.***")
+                            NetworkDetailRow(title: "Public IP", value: "Hidden (Privacy)")
                             Divider().background(Color.Vitals.cardBorder)
-                            NetworkDetailRow(title: "Gateway Ping", value: "4 ms")
+                            NetworkDetailRow(title: "Interface", value: "en0")
                         }
                     }
                     .padding(24)
@@ -239,7 +261,6 @@ struct NetworkView: View {
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
                     .cornerRadius(16)
                     
-                    // Per-App Usage Table
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
                             Text("Active Network Processes")
@@ -250,7 +271,6 @@ struct NetworkView: View {
                         }
                         .padding(20)
                         
-                        // Header
                         HStack {
                             Text("APP").frame(maxWidth: .infinity, alignment: .leading)
                             Text("DOWN").frame(width: 80, alignment: .trailing)
@@ -261,13 +281,27 @@ struct NetworkView: View {
                         
                         Divider().background(Color.Vitals.cardBorder)
                         
-                        // Fake App List
                         VStack(spacing: 0) {
-                            NetworkAppRow(name: "Google Chrome", down: "2.4 MB/s", up: "12 KB/s", color: .Vitals.neonPink)
-                            Divider().background(Color.Vitals.cardBorder)
-                            NetworkAppRow(name: "Spotify", down: "320 KB/s", up: "5 KB/s", color: .Vitals.neonTeal)
-                            Divider().background(Color.Vitals.cardBorder)
-                            NetworkAppRow(name: "Slack", down: "12 KB/s", up: "8 KB/s", color: .Vitals.neonYellow)
+                            if viewModel.activeApps.isEmpty {
+                                Text("Analyzing traffic...")
+                                    .font(.caption).foregroundColor(.Vitals.textSecondary).padding(.vertical, 20)
+                            } else {
+                                ForEach(Array(viewModel.activeApps.enumerated()), id: \.element.id) { index, app in
+                                    let colors: [Color] = [.Vitals.neonPink, .Vitals.neonTeal, .Vitals.neonYellow]
+                                    let color = colors[index % colors.count]
+                                    
+                                    NetworkAppRow(
+                                        name: app.name,
+                                        down: formatNetworkBytes(app.bytesIn),
+                                        up: formatNetworkBytes(app.bytesOut),
+                                        color: color
+                                    )
+                                    
+                                    if index < viewModel.activeApps.count - 1 {
+                                        Divider().background(Color.Vitals.cardBorder)
+                                    }
+                                }
+                            }
                         }
                     }
                     .background(Color.Vitals.cardBackground)
@@ -284,9 +318,15 @@ struct NetworkView: View {
         .onAppear { viewModel.startMonitoring() }
         .onDisappear { viewModel.stopMonitoring() }
     }
+    
+    func formatNetworkBytes(_ bytes: Double) -> String {
+        let mb = bytes / 1_048_576.0
+        if mb > 1024 { return String(format: "%.1f GB", mb / 1024.0) }
+        if mb >= 1.0 { return String(format: "%.1f MB", mb) }
+        return String(format: "%.0f KB", bytes / 1024.0)
+    }
 }
 
-// Helper Components
 struct NetworkDetailRow: View {
     let title: String
     let value: String

@@ -13,6 +13,9 @@ struct BatteryInfo {
     let designCapacity: Int
     let cycleCount: Int
     let isCharging: Bool
+    let temperature: Double
+    let powerDraw: Double
+    let timeRemaining: Int
     
     var currentPercentage: Double {
         guard maxCapacity > 0 else { return 0 }

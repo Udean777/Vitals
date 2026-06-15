@@ -18,21 +18,28 @@ final class StorageViewModel: ObservableObject {
     @Published var isScanning: Bool = false
     @Published var cacheItems: [CacheItem] = []
     @Published var totalCacheSavedString: String = "0 GB"
+    @Published var largeFiles: [LargeFileEntity] = []
+    @Published var isScanningLargeFiles: Bool = false
+    @Published var purgeableDisk: Double = 0
     
+    private let scanLargeFilesUseCase: ScanLargeFilesUseCase
     private let getDeviceInfoUseCase: GetDeviceInfoUseCase
     private let checkFDAUseCase: CheckFDAUseCase
     private let scanDeveloperCachesUseCase: ScanDeveloperCachesUseCase
     
     init(getDeviceInfoUseCase: GetDeviceInfoUseCase,
          checkFDAUseCase: CheckFDAUseCase,
-         scanDeveloperCachesUseCase: ScanDeveloperCachesUseCase) {
+         scanDeveloperCachesUseCase: ScanDeveloperCachesUseCase,
+         scanLargeFilesUseCase: ScanLargeFilesUseCase) {
         
         self.getDeviceInfoUseCase = getDeviceInfoUseCase
         self.checkFDAUseCase = checkFDAUseCase
         self.scanDeveloperCachesUseCase = scanDeveloperCachesUseCase
+        self.scanLargeFilesUseCase = scanLargeFilesUseCase
         
         fetchData()
         checkFDA()
+        scanLargeFiles()
     }
     
     func fetchData() {
@@ -40,6 +47,7 @@ final class StorageViewModel: ObservableObject {
         self.totalDisk = info.totalDiskSpace
         self.freeDisk = info.freeDiskSpace
         self.usedDisk = info.totalDiskSpace - info.freeDiskSpace
+        self.purgeableDisk = info.purgeableDiskSpace
     }
     
     func checkFDA() {
@@ -67,6 +75,19 @@ final class StorageViewModel: ObservableObject {
                 let totalBytes = result.reduce(0) { $0 + $1.sizeBytes }
                 self.totalCacheSavedString = formatBytes(totalBytes)
                 self.isScanning = false
+            }
+        }
+    }
+    
+    private func scanLargeFiles() {
+        isScanningLargeFiles = true
+        
+        Task {
+            let files = await scanLargeFilesUseCase.execute()
+            
+            await MainActor.run {
+                self.largeFiles = Array(files.prefix(5))
+                self.isScanningLargeFiles = false
             }
         }
     }

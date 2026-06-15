@@ -17,6 +17,10 @@ final class DIContainer: ObservableObject {
     let getNetworkStatsUseCase: GetNetworkStatsUseCase
     let checkFDAUseCase: CheckFDAUseCase
     let scanDeveloperCachesUseCase: ScanDeveloperCachesUseCase
+    let getNetworkAppsUseCase: GetNetworkAppsUseCase
+    let scanLargeFilesUseCase: ScanLargeFilesUseCase
+    let notificationService: NotificationService
+    let systemAlertsUseCase: SystemAlertsUseCase
     
     init() {
         let systemStatsRepository = MacSystemStatsRepository()
@@ -37,5 +41,14 @@ final class DIContainer: ObservableObject {
         let cacheScannerRepository = MacCacheScannerRepository()
         self.checkFDAUseCase = DefaultCheckFDAUseCase(repository: cacheScannerRepository)
         self.scanDeveloperCachesUseCase = DefaultScanDeveloperCachesUseCase(repository: cacheScannerRepository)
+        
+        let networkAppsRepository = MacNetworkAppsRepository()
+        self.getNetworkAppsUseCase = GetNetworkAppsUseCaseImpl(repository: networkAppsRepository)
+        
+        let largeFilesRepo = MacLargeFilesRepository()
+        self.scanLargeFilesUseCase = ScanLargeFilesUseCaseImpl(repository: largeFilesRepo)
+        
+        self.notificationService = MacNotificationService()
+        self.systemAlertsUseCase = SystemAlertsUseCase(notificationService: self.notificationService)
     }
 }

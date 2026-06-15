@@ -20,7 +20,6 @@ final class BatteryViewModel: ObservableObject {
     
     init(getBatteryInfoUseCase: GetBatteryInfoUseCase) {
         self.getBatteryInfoUseCase = getBatteryInfoUseCase
-        historyRepo.generateMockDataIfNeeded()
     }
     
     func startMonitoring() {

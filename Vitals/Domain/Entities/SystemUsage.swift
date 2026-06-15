@@ -15,6 +15,8 @@ struct SystemUsage {
     let wiredMemory: Double
     let compressedMemory: Double
     let cachedFiles: Double
+    let swapUsed: Double
+    let thermalState: String
     
     var ramUsagePercentage: Double {
         guard totalRAM > 0 else {return 0.0}

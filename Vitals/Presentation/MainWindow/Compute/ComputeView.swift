@@ -148,12 +148,12 @@ struct ComputeView: View {
                             Text("THERMAL SENSORS")
                                 .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
                             HStack(spacing: 12) {
-                                Text("45°C")
+                                Text(viewModel.thermalState)
                                     .font(.system(size: 20, weight: .bold, design: .rounded))
-                                    .foregroundColor(.Vitals.textPrimary)
-                                Text("1200 RPM")
+                                    .foregroundColor(viewModel.thermalState == "Normal" ? .Vitals.textPrimary : .Vitals.neonPink)
+                                Text("SMC Locked")
                                     .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                                    .foregroundColor(.Vitals.neonYellow)
+                                    .foregroundColor(.Vitals.textSecondary)
                             }
                         }
                         Spacer()
@@ -171,15 +171,15 @@ struct ComputeView: View {
                             Text("SWAP MEMORY USAGE")
                                 .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
                             HStack(spacing: 12) {
-                                Text("0.0 GB")
+                                Text(String(format: "%.1f GB", viewModel.swapUsed))
                                     .font(.system(size: 20, weight: .bold, design: .rounded))
                                     .foregroundColor(.Vitals.textPrimary)
-                                Text("Inactive")
+                                Text(viewModel.swapUsed > 0 ? "Active" : "Inactive")
                                     .font(.system(size: 14, weight: .bold))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 2)
-                                    .background(Color.Vitals.neonGreen.opacity(0.2))
-                                    .foregroundColor(.Vitals.neonGreen)
+                                    .background(viewModel.swapUsed > 0 ? Color.Vitals.neonPink.opacity(0.2) : Color.Vitals.neonGreen.opacity(0.2))
+                                    .foregroundColor(viewModel.swapUsed > 0 ? .Vitals.neonPink : .Vitals.neonGreen)
                                     .cornerRadius(4)
                             }
                         }

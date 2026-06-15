@@ -23,15 +23,27 @@ final class MacDeviceInfoRepository: DeviceInfoRepository {
         
         var freeDiskGB = 0.0
         var totalDiskGB = 0.0
+        var purgeableGB = 0.0
+        
         do {
             let fileURL = URL(fileURLWithPath: "/")
-            let values = try fileURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey, .volumeTotalCapacityKey])
+            let keys: [URLResourceKey] = [
+                .volumeAvailableCapacityForImportantUsageKey,
+                .volumeAvailableCapacityForOpportunisticUsageKey,
+                .volumeTotalCapacityKey
+            ]
+            let values = try fileURL.resourceValues(forKeys: Set(keys))
             
             if let free = values.volumeAvailableCapacityForImportantUsage {
                 freeDiskGB = Double(free) / 1_073_741_824.0
             }
             if let total = values.volumeTotalCapacity {
                 totalDiskGB = Double(total) / 1_073_741_824.0
+            }
+            if let opportunistic = values.volumeAvailableCapacityForOpportunisticUsage,
+               let important = values.volumeAvailableCapacityForImportantUsage {
+                let diff = opportunistic - important
+                if diff > 0 { purgeableGB = Double(diff) / 1_073_741_824.0 }
             }
         } catch {
             print("Gagal membaca status disk: \(error)")
@@ -42,6 +54,7 @@ final class MacDeviceInfoRepository: DeviceInfoRepository {
                           osVersion: osVersion,
                           totalRAM: totalRAMGB,
                           freeDiskSpace: freeDiskGB,
-                          totalDiskSpace: totalDiskGB)
+                          totalDiskSpace: totalDiskGB,
+                          purgeableDiskSpace: purgeableGB)
     }
 }

@@ -16,7 +16,7 @@ final class MacTopProcessesRepository: TopProcessesRepository {
         task.standardError = pipe
         task.launchPath = "/bin/bash"
         
-        task.arguments = ["-c", "ps -arcxo pid,pcpu,pmem,comm | head -n \(limit + 1)"]
+        task.arguments = ["-c", "ps -arcxo pid,pcpu,rss,comm | head -n \(limit + 1)"]
         
         try task.run()
         task.waitUntilExit()

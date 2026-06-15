@@ -21,16 +21,19 @@ final class MenuBarViewModel: ObservableObject {
     private let systemStatsUseCase: SystemStatsUseCase
     private let getTopProcessesUseCase: GetTopProcessesUseCase
     private let getBatteryInfoUseCase: GetBatteryInfoUseCase
+    private let systemAlertsUseCase: SystemAlertsUseCase
     
     private var timer: AnyCancellable?
     
     init(systemStatsUseCase: SystemStatsUseCase,
          getTopProcessesUseCase: GetTopProcessesUseCase,
-         getBatteryInfoUseCase: GetBatteryInfoUseCase) {
+         getBatteryInfoUseCase: GetBatteryInfoUseCase,
+         systemAlertsUseCase: SystemAlertsUseCase) {
         
         self.systemStatsUseCase = systemStatsUseCase
         self.getTopProcessesUseCase = getTopProcessesUseCase
         self.getBatteryInfoUseCase = getBatteryInfoUseCase
+        self.systemAlertsUseCase = systemAlertsUseCase
     }
     
     func startMonitoring() {
@@ -78,6 +81,8 @@ final class MenuBarViewModel: ObservableObject {
             }
             
             self.batteryInfo = try? getBatteryInfoUseCase.execute()
+            
+            systemAlertsUseCase.execute(batteryInfo: self.batteryInfo, systemUsage: stats)
         } catch {
             self.summaryText = "Error"
         }

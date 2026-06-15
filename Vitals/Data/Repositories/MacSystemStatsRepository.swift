@@ -15,6 +15,8 @@ final class MacSystemStatsRepository: SystemStatsRepository {
     func getSystemUsage() throws -> SystemUsage {
         let cpuLoad = getCpuLoad()
         let ramData = getRAMUsage()
+        let swapUsed = getSwapUsage()
+        let thermalState = getThermalState()
         
         return SystemUsage(
             cpuLoad: cpuLoad,
@@ -23,7 +25,9 @@ final class MacSystemStatsRepository: SystemStatsRepository {
             appMemory: ramData.appMem,
             wiredMemory: ramData.wiredMem,
             compressedMemory: ramData.compressedMem,
-            cachedFiles: ramData.cachedMem
+            cachedFiles: ramData.cachedMem,
+            swapUsed: swapUsed,
+            thermalState: thermalState
         )
     }
     
@@ -121,5 +125,26 @@ final class MacSystemStatsRepository: SystemStatsRepository {
             compressedMem: Double(compBytes) / gbDivisor,
             cachedMem: Double(cachedBytes) / gbDivisor
         )
+    }
+    
+    private func getSwapUsage() -> Double{
+        var xswUsage  = xsw_usage()
+        var size = MemoryLayout<xsw_usage>.size
+        let mib = [CTL_VM, VM_SWAPUSAGE]
+        if sysctl(UnsafeMutablePointer(mutating: mib), 2, &xswUsage, &size, nil, 0) == 0 {
+            return Double(xswUsage.xsu_used) / 1_073_741_824.0
+        }
+        
+        return 0.0
+    }
+    
+    private func getThermalState() -> String {
+        switch ProcessInfo.processInfo.thermalState {
+        case .nominal: return "Normal"
+        case .fair: return "Fair (Hangat)"
+        case .serious: return "Serious (Panas)"
+        case .critical: return "Critical (Overheat)"
+        @unknown default: return "Unknown"
+        }
     }
 }

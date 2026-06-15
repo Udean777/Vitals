@@ -14,4 +14,5 @@ struct DeviceInfo {
     let totalRAM: Double
     let freeDiskSpace: Double
     let totalDiskSpace: Double
+    let purgeableDiskSpace: Double
 }

@@ -10,10 +10,10 @@ import ServiceManagement
 
 struct SettingsView: View {
     @AppStorage("launchAtLogin") private var launchAtLogin = false
+    @AppStorage("systemAlertsEnabled") private var systemAlertsEnabled = true
     
     var body: some View {
         TabView {
-            // --- GENERAL TAB ---
             VStack(alignment: .leading, spacing: 20) {
                 HStack(spacing: 16) {
                     Image(systemName: "desktopcomputer")
@@ -50,7 +50,6 @@ struct SettingsView: View {
                 Label("General", systemImage: "gearshape")
             }
             
-            // --- ALERTS TAB ---
             VStack(alignment: .leading, spacing: 20) {
                 HStack(spacing: 16) {
                     Image(systemName: "bell.badge.fill")
@@ -69,7 +68,7 @@ struct SettingsView: View {
                     
                     Spacer()
                     
-                    Toggle("", isOn: .constant(true)) // Placeholder
+                    Toggle("", isOn: $systemAlertsEnabled)
                         .toggleStyle(SwitchToggleStyle(tint: .Vitals.neonPink))
                 }
                 .padding()
@@ -84,7 +83,6 @@ struct SettingsView: View {
                 Label("Alerts", systemImage: "bell.fill")
             }
             
-            // --- ABOUT TAB ---
             VStack(spacing: 15) {
                 Image(systemName: "waveform.path.ecg")
                     .font(.system(size: 60))

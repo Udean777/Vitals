@@ -122,15 +122,22 @@ struct BatteryView: View {
                 
                 if let battery = viewModel.batteryInfo {
                     HStack(spacing: 24) {
-                        DiagnosticCard(icon: "bolt.car.fill", title: "POWER DRAW", value: battery.isCharging ? "45.2 W" : "-12.5 W", subtitle: battery.isCharging ? "Supplied via USB-C" : "Discharging", color: .Vitals.neonYellow)
+                        let powerStr = String(format: "%.1f W", abs(battery.powerDraw))
+                        let powerSubtitle = battery.powerDraw > 0 ? "Supplied via Adapter" : "Discharging"
+                        DiagnosticCard(icon: "bolt.car.fill", title: "POWER DRAW", value: powerStr, subtitle: powerSubtitle, color: .
+                                       Vitals.neonYellow)
                         
-                        DiagnosticCard(icon: "thermometer.medium", title: "TEMPERATURE", value: "34°C", subtitle: "Normal Range", color: .Vitals.neonPink)
+                        let tempStr = battery.temperature > 0 ? String(format: "%.1f°C", battery.temperature) : "N/A"
+                        DiagnosticCard(icon: "thermometer.medium", title: "TEMPERATURE", value: tempStr, subtitle: "Internal Sensor",
+                                       color: .Vitals.neonPink)
                         
                         let condition = battery.healthPercentage > 80 ? "Normal" : "Replace Soon"
                         let conditionColor = battery.healthPercentage > 80 ? Color.Vitals.neonGreen : Color.Vitals.neonPink
-                        DiagnosticCard(icon: "checkmark.seal.fill", title: "CONDITION", value: condition, subtitle: String(format: "Health: %.1f%%", battery.healthPercentage), color: conditionColor)
+                        DiagnosticCard(icon: "checkmark.seal.fill", title: "CONDITION", value: condition, subtitle: String(format:
+                                                                                                                            "Health: %.1f%%", battery.healthPercentage), color: conditionColor)
                         
-                        DiagnosticCard(icon: "timer", title: "TIME REMAINING", value: battery.isCharging ? "1h 20m" : "4h 15m", subtitle: battery.isCharging ? "Until Full" : "Until Empty", color: .Vitals.neonTeal)
+                        let timeStr = battery.timeRemaining > 0 && battery.timeRemaining < 1000 ? "\(battery.timeRemaining / 60)h \(battery.timeRemaining % 60)m" : "Calculating..."
+                        DiagnosticCard(icon: "timer", title: "TIME REMAINING", value: timeStr, subtitle: battery.isCharging ? "Until Full" : "Until Empty", color: .Vitals.neonTeal)
                     }
                 }
                 

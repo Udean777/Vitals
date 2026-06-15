@@ -14,23 +14,27 @@ final class OverviewViewModel: ObservableObject {
     @Published var batteryInfo: BatteryInfo?
     @Published var networkInfo: NetworkStats?
     @Published var systemUsage: SystemUsage?
+    @Published var topProcesses: [ProcessEntity] = []
     
     private let getDeviceInfoUseCase: GetDeviceInfoUseCase
     private let getBatteryInfoUseCase: GetBatteryInfoUseCase
     private let getNetworkStatsUseCase: GetNetworkStatsUseCase
     private let getSystemStatsUseCase: SystemStatsUseCase
+    private let getTopProcessesUseCase: GetTopProcessesUseCase
     
     private var cancellables = Set<AnyCancellable>()
     
     init(getDeviceInfoUseCase: GetDeviceInfoUseCase,
          getBatteryInfoUseCase: GetBatteryInfoUseCase,
          getNetworkStatsUseCase: GetNetworkStatsUseCase,
-         getSystemStatsUseCase: SystemStatsUseCase) {
+         getSystemStatsUseCase: SystemStatsUseCase,
+         getTopProcessesUseCase: GetTopProcessesUseCase) {
         
         self.getDeviceInfoUseCase = getDeviceInfoUseCase
         self.getBatteryInfoUseCase = getBatteryInfoUseCase
         self.getNetworkStatsUseCase = getNetworkStatsUseCase
         self.getSystemStatsUseCase = getSystemStatsUseCase
+        self.getTopProcessesUseCase = getTopProcessesUseCase
         
         self.deviceInfo = getDeviceInfoUseCase.execute()
     }
@@ -54,5 +58,9 @@ final class OverviewViewModel: ObservableObject {
         self.batteryInfo = try? getBatteryInfoUseCase.execute()
         self.networkInfo = getNetworkStatsUseCase.execute()
         self.systemUsage = try? getSystemStatsUseCase.execute()
+        
+        if let processes = try? getTopProcessesUseCase.execute(limit: 3) {
+            self.topProcesses = processes
+        }
     }
 }
