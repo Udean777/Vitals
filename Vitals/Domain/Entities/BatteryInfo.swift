@@ -11,6 +11,8 @@ struct BatteryInfo {
     let currentCapacity: Int
     let maxCapacity: Int
     let designCapacity: Int
+    let rawCurrentCapacity: Int
+    let rawMaxCapacity: Int
     let cycleCount: Int
     let isCharging: Bool
     let temperature: Double
@@ -18,12 +20,11 @@ struct BatteryInfo {
     let timeRemaining: Int
     
     var currentPercentage: Double {
-        guard maxCapacity > 0 else { return 0 }
-        return (Double(currentCapacity) / Double(maxCapacity)) * 100
+        return Double(currentCapacity)
     }
     
     var healthPercentage: Double {
         guard designCapacity > 0 else { return 0 }
-        return (Double(maxCapacity) / Double(designCapacity)) * 100
+        return (Double(rawMaxCapacity) / Double(designCapacity)) * 100
     }
 }

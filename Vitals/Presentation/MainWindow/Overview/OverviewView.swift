@@ -169,11 +169,11 @@ struct OverviewView: View {
                         .padding(.top, 10)
                     
                     HStack {
-                        SpecBadge(title: "Architecture", value: "ARM64 (Apple Silicon)")
+                        SpecBadge(title: "Architecture", value: info.cpuArchitecture)
                         Spacer()
-                        SpecBadge(title: "OS Build", value: "macOS 14.x")
+                        SpecBadge(title: "OS Build", value: info.osVersion)
                         Spacer()
-                        SpecBadge(title: "Total Cores", value: "8 Cores")
+                        SpecBadge(title: "Total Cores", value: "\(info.totalCores) Cores")
                     }
                     .padding(16)
                     .background(Color.Vitals.cardBackground)

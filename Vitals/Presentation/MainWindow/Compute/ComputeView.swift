@@ -151,9 +151,20 @@ struct ComputeView: View {
                                 Text(viewModel.thermalState)
                                     .font(.system(size: 20, weight: .bold, design: .rounded))
                                     .foregroundColor(viewModel.thermalState == "Normal" ? .Vitals.textPrimary : .Vitals.neonPink)
-                                Text("SMC Locked")
-                                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                                    .foregroundColor(.Vitals.textSecondary)
+                                
+                                Text(viewModel.thermalState == "Normal" ? "Sistem Stabil" : "Throttling Aktif")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 2)
+                                    .background(
+                                        viewModel.thermalState == "Normal"
+                                        ? Color.Vitals.neonGreen.opacity(0.15)
+                                        : Color.Vitals.neonPink.opacity(0.15)
+                                    )
+                                    .foregroundColor(
+                                        viewModel.thermalState == "Normal" ? .Vitals.neonGreen : .Vitals.neonPink
+                                    )
+                                    .cornerRadius(4)
                             }
                         }
                         Spacer()
@@ -199,13 +210,42 @@ struct ComputeView: View {
                             Text(String(format: "%.0f GB Total Physical Memory", viewModel.totalRAM))
                                 .font(.caption).foregroundColor(.Vitals.textSecondary)
                         }
+                        
                         Spacer()
+                        
                         HStack {
-                            Image(systemName: "arrow.left.arrow.right")
-                            Text(String(format: "Swap Memory: %.1f GB", 0.0))
+                            Image(systemName: "arrow.left.arrow.right.circle.fill")
+                                .font(.title)
+                                .foregroundColor(.Vitals.neonTeal)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("SWAP & MEMORY PRESSURE")
+                                    .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                                
+                                HStack(spacing: 8) {
+                                    Text(String(format: "%.1f GB", viewModel.swapUsed))
+                                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                                        .foregroundColor(.Vitals.textPrimary)
+                                    Text("Swap")
+                                        .font(.caption)
+                                        .foregroundColor(.Vitals.textSecondary)
+                                }
+                                
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(pressureColor(viewModel.memoryPressure))
+                                        .frame(width: 8, height: 8)
+                                        .shadow(color: pressureColor(viewModel.memoryPressure), radius: 4)
+                                    Text("Pressure: \(viewModel.memoryPressure.label)")
+                                        .font(.caption)
+                                        .foregroundColor(pressureColor(viewModel.memoryPressure))
+                                }
+                            }
+                            Spacer()
                         }
-                        .font(.caption).foregroundColor(.Vitals.neonTeal)
-                        .padding(8).background(Color.Vitals.cardBorder).cornerRadius(8)
+                        .padding(20)
+                        .background(Color.Vitals.cardBackground)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                        .cornerRadius(12)
                     }
                     
                     GeometryReader { geo in
@@ -282,9 +322,9 @@ struct ComputeView: View {
                                 .foregroundColor(process.cpuUsage > 20 ? .Vitals.neonPink : .Vitals.textSecondary)
                                 .font(.system(.body, design: .monospaced))
                             
-                            Text(String(format: "%.1f MB", process.ramUsage))
+                            Text(formatProcessRAM(process.ramUsage))
                                 .frame(width: 100, alignment: .trailing)
-                                .foregroundColor(process.ramUsage > 500 ? .Vitals.neonYellow : .Vitals.textSecondary)
+                                .foregroundColor(process.ramUsage > 512_000 ? .Vitals.neonYellow : .Vitals.textSecondary)
                                 .font(.system(.body, design: .monospaced))
                             
                             Text("\(process.pid)")
@@ -310,6 +350,23 @@ struct ComputeView: View {
         .background(Color.Vitals.background)
         .onAppear { viewModel.startMonitoring() }
         .onDisappear { viewModel.stopMonitoring() }
+    }
+    
+    private func pressureColor(_ level: MemoryPressureLevel) -> Color {
+        switch level {
+        case .normal:   return .Vitals.neonGreen
+        case .warning:  return .Vitals.neonYellow
+        case .critical: return .Vitals.neonPink
+        }
+    }
+}
+
+private func formatProcessRAM(_ ramUsageKB: Double) -> String {
+    let mb = ramUsageKB / 1024.0
+    if mb >= 1024.0 {
+        return String(format: "%.1f GB", mb / 1024.0)
+    } else {
+        return String(format: "%.0f MB", mb)
     }
 }
 

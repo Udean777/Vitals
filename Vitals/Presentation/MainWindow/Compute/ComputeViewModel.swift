@@ -20,6 +20,7 @@ final class ComputeViewModel: ObservableObject {
     @Published var cachedFiles: Double = 0
     @Published var swapUsed: Double = 0.0
     @Published var thermalState: String = "Normal"
+    @Published var memoryPressure: MemoryPressureLevel = .normal
     
     private let systemStatsUseCase: SystemStatsUseCase
     private let getTopProcessesUseCase: GetTopProcessesUseCase
@@ -28,6 +29,7 @@ final class ComputeViewModel: ObservableObject {
     init(systemStatsUseCase: SystemStatsUseCase, getTopProcessesUseCase: GetTopProcessesUseCase) {
         self.systemStatsUseCase = systemStatsUseCase
         self.getTopProcessesUseCase = getTopProcessesUseCase
+        self.memoryPressure = memoryPressure
     }
     
     func startMonitoring() {

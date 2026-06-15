@@ -17,6 +17,7 @@ final class MacSystemStatsRepository: SystemStatsRepository {
         let ramData = getRAMUsage()
         let swapUsed = getSwapUsage()
         let thermalState = getThermalState()
+        let pressure = getMemoryPressure(stats: ramData.rawStats, totalRAM: ramData.total)
         
         return SystemUsage(
             cpuLoad: cpuLoad,
@@ -27,7 +28,8 @@ final class MacSystemStatsRepository: SystemStatsRepository {
             compressedMemory: ramData.compressedMem,
             cachedFiles: ramData.cachedMem,
             swapUsed: swapUsed,
-            thermalState: thermalState
+            thermalState: thermalState,
+            memoryPressure: pressure
         )
     }
     
@@ -82,7 +84,7 @@ final class MacSystemStatsRepository: SystemStatsRepository {
     }
     
     private func getRAMUsage() -> (used: Double, total: Double, appMem: Double, wiredMem: Double, compressedMem: Double, cachedMem:
-                                    Double) {
+                                    Double, rawStats: vm_statistics64) {
         var stats = vm_statistics64()
         var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
         
@@ -123,7 +125,8 @@ final class MacSystemStatsRepository: SystemStatsRepository {
             appMem: Double(appBytes) / gbDivisor,
             wiredMem: Double(wiredBytes) / gbDivisor,
             compressedMem: Double(compBytes) / gbDivisor,
-            cachedMem: Double(cachedBytes) / gbDivisor
+            cachedMem: Double(cachedBytes) / gbDivisor,
+            rawStats: stats
         )
     }
     
@@ -145,6 +148,23 @@ final class MacSystemStatsRepository: SystemStatsRepository {
         case .serious: return "Serious (Panas)"
         case .critical: return "Critical (Overheat)"
         @unknown default: return "Unknown"
+        }
+    }
+    
+    private func getMemoryPressure(stats: vm_statistics64, totalRAM: Double) -> MemoryPressureLevel {
+        let pageSize = Double(getpagesize())
+        let totalPages = totalRAM * 1_073_741_824.0 / pageSize
+        
+        let compressedRatio = Double(stats.compressor_page_count) / totalPages
+        
+        let swappedRatio = Double(stats.pageouts) / max(totalPages, 1)
+        
+        if compressedRatio > 0.15 || swappedRatio > 0.05 {
+            return .critical
+        } else if compressedRatio > 0.07 {
+            return .warning
+        } else {
+            return .normal
         }
     }
 }

@@ -21,13 +21,16 @@ final class MacBatteryRepository: BatteryRepository {
         
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         guard let output = String(data: data, encoding: .utf8) else {
-            throw NSError(domain: "Batter Error", code: 1, userInfo: nil)
+            throw NSError(domain: "BatteryError", code: 1, userInfo: nil)
         }
         
-        let maxCap = extractInt(from: output, key: "\"AppleRawMaxCapacity\"") ?? extractInt(from: output, key: "\"MaxCapacity\"") ?? 100
-        let currentCap = extractInt(from: output, key: "\"AppleRawCurrentCapacity\"") ?? extractInt(from: output, key: "\"CurrentCapacity\"")
-        ?? 0
-        let designCap = extractInt(from: output, key: "\"DesignCapacity\"") ?? 100
+        let currentCap = extractInt(from: output, key: "\"CurrentCapacity\"") ?? 0
+        let maxCap = extractInt(from: output, key: "\"MaxCapacity\"") ?? 100
+        
+        let rawMaxCap = extractInt(from: output, key: "\"AppleRawMaxCapacity\"") ?? maxCap
+        let rawCurrentCap = extractInt(from: output, key: "\"AppleRawCurrentCapacity\"") ?? currentCap
+        let designCap = extractInt(from: output, key: "\"DesignCapacity\"") ?? 4629
+        
         let cycleCount = extractInt(from: output, key: "\"CycleCount\"") ?? 0
         let isChargingStr = extractString(from: output, key: "\"IsCharging\"") ?? "No"
         let timeRemaining = extractInt(from: output, key: "\"TimeRemaining\"") ?? 0
@@ -43,6 +46,8 @@ final class MacBatteryRepository: BatteryRepository {
             currentCapacity: currentCap,
             maxCapacity: maxCap,
             designCapacity: designCap,
+            rawCurrentCapacity: rawCurrentCap,
+            rawMaxCapacity: rawMaxCap,
             cycleCount: cycleCount,
             isCharging: (isChargingStr == "Yes" || isChargingStr == "true"),
             temperature: tempCelsius,
