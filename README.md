@@ -4,6 +4,9 @@ Vitals is an advanced, beautifully designed system monitoring tool for macOS bui
 
 ![Vitals Architecture & UI Concept](https://img.shields.io/badge/UI-Cyberpunk%20%7C%20Glassmorphism-blue) ![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey) ![Language](https://img.shields.io/badge/Language-Swift%206-orange)
 
+> [!WARNING]  
+> **Important Installation Note:** Vitals is currently distributed as an *unsigned* application. When downloading from the Releases page, macOS Gatekeeper may show an error stating the app is "damaged." **This is normal for unsigned apps.** Please read the `INSTALL_GUIDE.txt` file attached to each release for a quick 1-minute fix to safely open the app.
+
 ## 🌟 Features
 
 Vitals offers a native, lightweight, and incredibly detailed look into your macOS system state:
