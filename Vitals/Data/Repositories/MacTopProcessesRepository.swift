@@ -36,14 +36,21 @@ final class MacTopProcessesRepository: TopProcessesRepository {
             
             if components.count >= 4 ,
                let pid = Int(components[0]),
-              let cpu = Double(components[1]),
-              let mem = Double(components[2]) {
-
-               let name = components[3...].joined(separator: " ")
-               processes.append(ProcessEntity(pid: pid, name: name, cpuUsage: cpu, ramUsage: mem))
-           }
+               let cpu = Double(components[1]),
+               let mem = Double(components[2]) {
+                
+                let name = components[3...].joined(separator: " ")
+                processes.append(ProcessEntity(pid: pid, name: name, cpuUsage: cpu, ramUsage: mem))
+            }
         }
         
         return processes
+    }
+    
+    func killProcess(pid: Int) throws {
+        let result = kill(pid_t(pid), SIGTERM)
+        if result != 0 {
+            throw NSError(domain: "VitalsError", code: Int(result), userInfo: [NSLocalizedDescriptionKey: "Gagal menghentikan proses \(pid)."])
+        }
     }
 }

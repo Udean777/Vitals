@@ -11,6 +11,7 @@ extension Color {
         static let neonYellow = Color(red: 0.90, green: 0.55, blue: 0.05)
         static let neonBlue = Color(red: 0.10, green: 0.45, blue: 0.90)
         static let neonGreen = Color(red: 0.20, green: 0.75, blue: 0.35)
+        static let neonPurple = Color(red: 0.50, green: 0.30, blue: 0.80)
         
         static let textPrimary = Color.black.opacity(0.85)
         static let textSecondary = Color.black.opacity(0.55)

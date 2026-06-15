@@ -23,12 +23,12 @@ final class MacLargeFilesRepository: LargeFilesRepository {
             for url in urlsToScan {
                 if let enumerator = fileManager.enumerator(at: url, includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
                                                            options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
-                    for case let fileURL as URL in enumerator {
+                    while let fileURL = enumerator.nextObject() as? URL {
                         do {
                             let resourceValues = try fileURL.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey])
                             if let isDirectory = resourceValues.isDirectory, !isDirectory {
                                 if let fileSize = resourceValues.fileSize {
-                                    if fileSize > 100_000_000 { // Tangkap file berukuran > 100 MB
+                                    if fileSize > 100_000_000 {
                                         largeFiles.append(LargeFileEntity(
                                             name: fileURL.lastPathComponent,
                                             sizeBytes: UInt64(fileSize),

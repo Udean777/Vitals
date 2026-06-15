@@ -39,7 +39,10 @@ final class MenuBarViewModel: ObservableObject {
     func startMonitoring() {
         fetchStats()
         
-        timer = Timer.publish(every: 2.0, on: .main, in: .common)
+        let interval = UserDefaults.standard.double(forKey: "refreshIntervalSeconds")
+        let safeInterval = interval > 0 ? interval : 1.0
+        
+        timer = Timer.publish(every: safeInterval, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.fetchStats()

@@ -22,13 +22,34 @@ struct OverviewView: View {
             getBatteryInfoUseCase: container.getBatteryInfoUseCase,
             getNetworkStatsUseCase: container.getNetworkStatsUseCase,
             getSystemStatsUseCase: container.systemStatsUseCase,
-            getTopProcessesUseCase: container.getTopProcessesUseCase
+            getTopProcessesUseCase: container.getTopProcessesUseCase,
+            exportReportUseCase: container.exportSystemReportUseCase,
+            killProcessUseCase: container.killProcessUseCase,
+            getDiskIOUseCase: container.getDiskIOUseCase
         ))
     }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
+                
+                HStack {
+                    Text("System Overview")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundColor(.Vitals.textPrimary)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        viewModel.exportReport()
+                    }) {
+                        Label("Export Report", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.Vitals.neonTeal)
+                }
+                .padding(.bottom, 10)
                 
                 if let info = viewModel.deviceInfo {
                     HStack(spacing: 20) {
@@ -148,6 +169,22 @@ struct OverviewView: View {
                         )
                         
                         SummaryCardView(
+                            title: "Disk Read",
+                            value: viewModel.diskIOStats != nil ? formatSpeed(viewModel.diskIOStats!.readSpeedBytes) : "Calc...",
+                            icon: "externaldrive.badge.person.crop",
+                            color: .Vitals.neonGreen,
+                            progress: 1.0
+                        )
+                        
+                        SummaryCardView(
+                            title: "Disk Write",
+                            value: viewModel.diskIOStats != nil ? formatSpeed(viewModel.diskIOStats!.writeSpeedBytes) : "Calc...",
+                            icon: "externaldrive.badge.icloud",
+                            color: .Vitals.neonYellow,
+                            progress: 1.0
+                        )
+                        
+                        SummaryCardView(
                             title: "Swap Memory",
                             value: viewModel.systemUsage != nil ? String(format: "%.1f GB", viewModel.systemUsage!.swapUsed) : "Calc...",
                             icon: "arrow.left.arrow.right",
@@ -165,8 +202,9 @@ struct OverviewView: View {
                         )
                     }
                     
-                    TopProcessesView(processes: viewModel.topProcesses)
-                        .padding(.top, 10)
+                    TopProcessesView(processes: viewModel.topProcesses) { pid in
+                        viewModel.forceQuitProcess(pid: pid)
+                    }
                     
                     HStack {
                         SpecBadge(title: "Architecture", value: info.cpuArchitecture)
@@ -197,6 +235,13 @@ struct OverviewView: View {
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
     }
+    
+    private func formatSpeed(_ bytes: UInt64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useBytes, .useKB, .useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(bytes)) + "/s"
+    }
 }
 
 struct SpecBadge: View {
@@ -219,6 +264,7 @@ struct SpecBadge: View {
 
 struct TopProcessesView: View {
     var processes: [ProcessEntity]
+    var onKillProcess: (Int) -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -241,6 +287,13 @@ struct TopProcessesView: View {
                             memory: formatMemory(process.ramUsage),
                             iconColor: getIconColor(for: index)
                         )
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                onKillProcess(process.pid)
+                            } label: {
+                                Label("Force Quit", systemImage: "xmark.octagon")
+                            }
+                        }
                         
                         if index < processes.count - 1 {
                             Divider()

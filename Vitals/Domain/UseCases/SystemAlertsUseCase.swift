@@ -20,10 +20,13 @@ final class SystemAlertsUseCase {
         let alertsEnabled = UserDefaults.standard.bool(forKey: "systemAlertsEnabled")
         guard alertsEnabled else { return }
         
+        let cpuThreshold = UserDefaults.standard.object(forKey: "cpuAlertThreshold") as? Double ?? 90.0
+        let batteryThreshold = UserDefaults.standard.object(forKey: "batteryAlertThreshold") as? Double ?? 80.0
+        
         let now = Date()
         
         if let battery = batteryInfo {
-            if battery.isCharging && battery.currentPercentage >= 80.0 {
+            if battery.isCharging && battery.currentPercentage >= batteryThreshold {
                 if lastBatteryAlertTime == nil || now.timeIntervalSince(lastBatteryAlertTime!) > 3600 {
                     notificationService.sendNotification(
                         identifier: "battery_80_alert",
@@ -32,13 +35,13 @@ final class SystemAlertsUseCase {
                     )
                     lastBatteryAlertTime = now
                 }
-            } else if !battery.isCharging && battery.currentPercentage < 80.0 {
+            } else if !battery.isCharging && battery.currentPercentage < batteryThreshold {
                 lastBatteryAlertTime = nil
             }
         }
         
         if let usage = systemUsage {
-            if usage.cpuLoad > 90.0 {
+            if usage.cpuLoad > cpuThreshold {
                 if lastCpuAlertTime == nil || now.timeIntervalSince(lastCpuAlertTime!) > 600 {
                     notificationService.sendNotification(
                         identifier: "cpu_high_alert",
@@ -47,7 +50,7 @@ final class SystemAlertsUseCase {
                     )
                     lastCpuAlertTime = now
                 }
-            } else if usage.cpuLoad < 80.0 {
+            } else if usage.cpuLoad < cpuThreshold - 10.0 {
                 lastCpuAlertTime = nil
             }
         }

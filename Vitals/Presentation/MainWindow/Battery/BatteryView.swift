@@ -14,7 +14,10 @@ struct BatteryView: View {
     
     init() {
         let container = DIContainer()
-        _viewModel = StateObject(wrappedValue: BatteryViewModel(getBatteryInfoUseCase: container.getBatteryInfoUseCase))
+        _viewModel = StateObject(wrappedValue: BatteryViewModel(
+            getBatteryInfoUseCase: container.getBatteryInfoUseCase,
+            getEnergyAppsUseCase: container.getEnergyAppsUseCase
+        ))
     }
     
     var body: some View {
@@ -141,66 +144,128 @@ struct BatteryView: View {
                     }
                 }
                 
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack {
-                        Text("Usage History (Last 24 Hours)")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.Vitals.textPrimary)
-                        Spacer()
-                        Image(systemName: "chart.xyaxis.line")
-                            .foregroundColor(.Vitals.neonTeal)
-                    }
-                    
-                    if viewModel.historyPoints.isEmpty {
-                        Text("Belum ada data historis yang terkumpul.")
-                            .foregroundColor(.Vitals.textSecondary)
-                    } else {
-                        Chart(viewModel.historyPoints) { point in
-                            LineMark(
-                                x: .value("Waktu", point.timestamp),
-                                y: .value("Level", point.percentage)
-                            )
-                            .interpolationMethod(.monotone)
-                            .foregroundStyle(Color.Vitals.neonTeal)
-                            .lineStyle(StrokeStyle(lineWidth: 3))
-                            
-                            AreaMark(
-                                x: .value("Waktu", point.timestamp),
-                                y: .value("Level", point.percentage)
-                            )
-                            .interpolationMethod(.monotone)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color.Vitals.neonTeal.opacity(0.4), Color.clear]),
-                                    startPoint: .top,
-                                    endPoint: .bottom
+                HStack(alignment: .top, spacing: 24) {
+                    // History Chart
+                    VStack(alignment: .leading, spacing: 20) {
+                        HStack {
+                            Text("Usage History")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(.Vitals.textPrimary)
+                            Spacer()
+                            Image(systemName: "chart.xyaxis.line")
+                                .foregroundColor(.Vitals.neonTeal)
+                        }
+                        
+                        if viewModel.historyPoints.isEmpty {
+                            Text("Belum ada data historis yang terkumpul.")
+                                .foregroundColor(.Vitals.textSecondary)
+                        } else {
+                            Chart(viewModel.historyPoints) { point in
+                                LineMark(
+                                    x: .value("Waktu", point.timestamp),
+                                    y: .value("Level", point.percentage)
                                 )
-                            )
-                        }
-                        .chartYScale(domain: 0...100)
-                        .frame(height: 250)
-                        .padding(.top, 10)
-                        .chartYAxis {
-                            AxisMarks(position: .leading) { _ in
-                                AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
-                                AxisTick().foregroundStyle(Color.Vitals.textSecondary)
-                                AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                                .interpolationMethod(.monotone)
+                                .foregroundStyle(Color.Vitals.neonTeal)
+                                .lineStyle(StrokeStyle(lineWidth: 3))
+                                
+                                AreaMark(
+                                    x: .value("Waktu", point.timestamp),
+                                    y: .value("Level", point.percentage)
+                                )
+                                .interpolationMethod(.monotone)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [Color.Vitals.neonTeal.opacity(0.4), Color.clear]),
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
                             }
-                        }
-                        .chartXAxis {
-                            AxisMarks() { _ in
-                                AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
-                                AxisTick().foregroundStyle(Color.Vitals.textSecondary)
-                                AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                            .chartYScale(domain: 0...100)
+                            .frame(height: 250)
+                            .padding(.top, 10)
+                            .chartYAxis {
+                                AxisMarks(position: .leading) { _ in
+                                    AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
+                                    AxisTick().foregroundStyle(Color.Vitals.textSecondary)
+                                    AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                                }
+                            }
+                            .chartXAxis {
+                                AxisMarks() { _ in
+                                    AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
+                                    AxisTick().foregroundStyle(Color.Vitals.textSecondary)
+                                    AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                                }
                             }
                         }
                     }
+                    .padding(30)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.Vitals.cardBackground)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                    .cornerRadius(16)
+                    
+                    // Top Energy Apps
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Top Energy Impact")
+                                .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
+                            Spacer()
+                            Image(systemName: "bolt.fill")
+                                .foregroundColor(.Vitals.neonYellow)
+                        }
+                        .padding(20)
+                        
+                        HStack {
+                            Text("APP").frame(maxWidth: .infinity, alignment: .leading)
+                            Text("IMPACT").frame(width: 80, alignment: .trailing)
+                        }
+                        .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                        .padding(.horizontal, 20).padding(.bottom, 10)
+                        
+                        Divider().background(Color.Vitals.cardBorder)
+                        
+                        VStack(spacing: 0) {
+                            if viewModel.topEnergyApps.isEmpty {
+                                Text("Analyzing energy impact...")
+                                    .font(.caption).foregroundColor(.Vitals.textSecondary).padding(.vertical, 20)
+                            } else {
+                                ForEach(Array(viewModel.topEnergyApps.enumerated()), id: \.element.id) { index, app in
+                                    HStack {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: "app.fill")
+                                                .foregroundColor(.Vitals.neonYellow)
+                                            Text(app.name)
+                                                .foregroundColor(.Vitals.textPrimary)
+                                                .lineLimit(1)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        
+                                        Text(String(format: "%.1f", app.power))
+                                            .frame(width: 80, alignment: .trailing)
+                                            .foregroundColor(.Vitals.neonYellow)
+                                            .font(.system(.body, design: .monospaced))
+                                    }
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 20)
+                                    
+                                    if index < viewModel.topEnergyApps.count - 1 {
+                                        Divider().background(Color.Vitals.cardBorder)
+                                    }
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                    .frame(width: 350)
+                    .frame(maxHeight: .infinity)
+                    .background(Color.Vitals.cardBackground)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                    .cornerRadius(16)
                 }
-                .padding(30)
-                .background(Color.Vitals.cardBackground)
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
-                .cornerRadius(16)
                 
                 Spacer()
             }

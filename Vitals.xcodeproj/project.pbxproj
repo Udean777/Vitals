@@ -23,6 +23,19 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		D090D1EF2FDFE7DE0051F3A5 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		D04471D52FDD8F43002287CB /* Vitals.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vitals.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D04471E22FDD8F44002287CB /* VitalsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VitalsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -102,6 +115,7 @@
 				D04471D12FDD8F43002287CB /* Sources */,
 				D04471D22FDD8F43002287CB /* Frameworks */,
 				D04471D32FDD8F43002287CB /* Resources */,
+				D090D1EF2FDFE7DE0051F3A5 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);

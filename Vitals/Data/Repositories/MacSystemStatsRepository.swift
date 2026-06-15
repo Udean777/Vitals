@@ -133,8 +133,10 @@ final class MacSystemStatsRepository: SystemStatsRepository {
     private func getSwapUsage() -> Double{
         var xswUsage  = xsw_usage()
         var size = MemoryLayout<xsw_usage>.size
-        let mib = [CTL_VM, VM_SWAPUSAGE]
-        if sysctl(UnsafeMutablePointer(mutating: mib), 2, &xswUsage, &size, nil, 0) == 0 {
+        
+        var mib: [Int32] = [CTL_VM, VM_SWAPUSAGE]
+        
+        if sysctl(&mib, 2, &xswUsage, &size, nil, 0) == 0 {
             return Double(xswUsage.xsu_used) / 1_073_741_824.0
         }
         
@@ -167,4 +169,5 @@ final class MacSystemStatsRepository: SystemStatsRepository {
             return .normal
         }
     }
+    
 }

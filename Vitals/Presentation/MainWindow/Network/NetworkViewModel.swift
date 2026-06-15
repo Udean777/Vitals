@@ -22,9 +22,10 @@ final class NetworkViewModel: ObservableObject {
     @Published var activeApps: [NetworkAppEntity] = []
     @Published var localIP: String = "Mencari..."
     @Published var ssid: String = "Mencari..."
+    @Published var publicIP: String = "Mencari..."
     
-    private let getNetworkAppsUseCase: GetNetworkAppsUseCase
-    private let getNetworkStatsUseCase: GetNetworkStatsUseCase
+    nonisolated private let getNetworkAppsUseCase: GetNetworkAppsUseCase
+    nonisolated private let getNetworkStatsUseCase: GetNetworkStatsUseCase
     private var timer: AnyCancellable?
     
     init(getNetworkStatsUseCase: GetNetworkStatsUseCase,
@@ -33,12 +34,16 @@ final class NetworkViewModel: ObservableObject {
         self.getNetworkAppsUseCase = getNetworkAppsUseCase
         
         fetchNetworkDetails()
+        fetchPublicIP()
     }
     
     func startMonitoring() {
         _ = getNetworkStatsUseCase.execute()
         
-        timer = Timer.publish(every: 1.0, on: .main, in: .common)
+        let interval = UserDefaults.standard.double(forKey: "refreshIntervalSeconds")
+        let safeInterval = interval > 0 ? interval : 1.0
+        
+        timer = Timer.publish(every: safeInterval, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in self?.fetchData() }
     }
@@ -71,10 +76,30 @@ final class NetworkViewModel: ObservableObject {
         if (downloadHistory.max() ?? 0) < maxDownload / 2 { maxDownload = maxDownload * 0.9 }
         if (uploadHistory.max() ?? 0) < maxUpload / 2 { maxUpload = maxUpload * 0.9 }
         
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
             let apps = self.getNetworkAppsUseCase.execute()
+            
             DispatchQueue.main.async {
                 self.activeApps = Array(apps.prefix(3))
+            }
+        }
+    }
+    
+    private func fetchPublicIP() {
+        Task {
+            do {
+                guard let url = URL(string: "https://api.ipify.org") else { return }
+                let (data, _) = try await URLSession.shared.data(from: url)
+                if let ip = String(data: data, encoding: .utf8) {
+                    await MainActor.run { [weak self] in
+                        self?.publicIP = ip
+                    }
+                }
+            } catch {
+                await MainActor.run {[weak self] in
+                    self?.publicIP = "Offline / Gagal"
+                }
             }
         }
     }

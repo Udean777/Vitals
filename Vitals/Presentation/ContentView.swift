@@ -13,12 +13,13 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView{
             VStack {
-                List(SidebarItem.allCases, selection: $selectedMenu) {item in
+                List(SidebarItem.allCases, selection: $selectedMenu) { item in
                     NavigationLink(value: item) {
                         Label(item.rawValue, systemImage: item.iconName)
                             .font(.system(.body, design: .rounded))
                             .padding(.vertical, 4)
                     }
+                    .keyboardShortcut(item.shortcutKey, modifiers: .command)
                 }
                 .listStyle(.sidebar)
                 

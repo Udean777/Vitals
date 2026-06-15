@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 enum SidebarItem: String, CaseIterable, Identifiable {
     case overview = "Overview"
@@ -23,6 +24,16 @@ enum SidebarItem: String, CaseIterable, Identifiable {
         case .compute: return "cpu"
         case .network: return "network"
         case .storage: return "internaldrive"
+        }
+    }
+    
+    var shortcutKey: KeyEquivalent {
+        switch self {
+        case .overview: return "1"
+        case .battery: return "2"
+        case .compute: return "3"
+        case .network: return "4"
+        case .storage: return "5"
         }
     }
 }

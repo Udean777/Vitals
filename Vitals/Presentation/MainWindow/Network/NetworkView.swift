@@ -250,7 +250,7 @@ struct NetworkView: View {
                             Divider().background(Color.Vitals.cardBorder)
                             NetworkDetailRow(title: "Local IP", value: viewModel.localIP)
                             Divider().background(Color.Vitals.cardBorder)
-                            NetworkDetailRow(title: "Public IP", value: "Hidden (Privacy)")
+                            NetworkDetailRow(title: "Public IP", value: viewModel.publicIP)
                             Divider().background(Color.Vitals.cardBorder)
                             NetworkDetailRow(title: "Interface", value: "en0")
                         }
