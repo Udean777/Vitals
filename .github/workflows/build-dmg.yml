@@ -1,0 +1,59 @@
+name: Build Unsigned DMG
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Memungkinkan trigger manual dari GitHub UI
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Select Xcode Version
+      run: sudo xcode-select -s /Applications/Xcode_16.0.app
+
+    - name: Install create-dmg
+      run: brew install create-dmg
+
+    - name: Build and Archive (Unsigned)
+      run: |
+        xcodebuild clean archive \
+          -project Vitals.xcodeproj \
+          -scheme Vitals \
+          -configuration Release \
+          -archivePath $PWD/build/Vitals.xcarchive \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Create DMG
+      run: |
+        # Mengambil file .app dari hasil archive
+        APP_PATH="build/Vitals.xcarchive/Products/Applications/Vitals.app"
+        
+        # Ekstrak versi dari Info.plist (opsional, untuk nama file DMG)
+        APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP_PATH/Contents/Info.plist")
+        
+        create-dmg \
+          --volname "Vitals Installer" \
+          --window-pos 200 120 \
+          --window-size 600 400 \
+          --icon-size 100 \
+          --icon "Vitals.app" 150 190 \
+          --hide-extension "Vitals.app" \
+          --app-drop-link 450 190 \
+          "Vitals-v$APP_VERSION-Unsigned.dmg" \
+          "$APP_PATH"
+
+    - name: Upload DMG Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Vitals-DMG
+        path: "*.dmg"
+        retention-days: 7
