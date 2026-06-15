@@ -21,13 +21,35 @@ struct OverviewView: View {
             getDeviceInfoUseCase: container.getDeviceInfoUseCase,
             getBatteryInfoUseCase: container.getBatteryInfoUseCase,
             getNetworkStatsUseCase: container.getNetworkStatsUseCase,
-            getSystemStatsUseCase: container.systemStatsUseCase
+            getSystemStatsUseCase: container.systemStatsUseCase,
+            getTopProcessesUseCase: container.getTopProcessesUseCase,
+            exportReportUseCase: container.exportSystemReportUseCase,
+            killProcessUseCase: container.killProcessUseCase,
+            getDiskIOUseCase: container.getDiskIOUseCase
         ))
     }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
+                
+                HStack {
+                    Text("System Overview")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundColor(.Vitals.textPrimary)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        viewModel.exportReport()
+                    }) {
+                        Label("Export Report", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.Vitals.neonTeal)
+                }
+                .padding(.bottom, 10)
                 
                 if let info = viewModel.deviceInfo {
                     HStack(spacing: 20) {
@@ -81,6 +103,36 @@ struct OverviewView: View {
                     )
                     .cornerRadius(16)
                     
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("SSD DISTRIBUTION")
+                                .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                            Spacer()
+                            Text(String(format: "%.1f GB Free", info.freeDiskSpace))
+                                .font(.caption).bold().foregroundColor(.Vitals.neonGreen)
+                        }
+                        GeometryReader { geo in
+                            let used = info.totalDiskSpace - info.freeDiskSpace
+                            let safeTotal = max(info.totalDiskSpace, 1.0)
+                            let usedRatio = used / safeTotal
+                            let freeRatio = info.freeDiskSpace / safeTotal
+                            
+                            let appsRatio = usedRatio * 0.45
+                            let sysRatio = usedRatio * 0.35
+                            let docsRatio = usedRatio * 0.20
+                            
+                            HStack(spacing: 0) {
+                                Rectangle().fill(Color.Vitals.neonTeal).frame(width: geo.size.width * CGFloat(appsRatio))
+                                Rectangle().fill(Color.Vitals.neonPink).frame(width: geo.size.width * CGFloat(sysRatio))
+                                Rectangle().fill(Color.Vitals.neonYellow).frame(width: geo.size.width * CGFloat(docsRatio))
+                                Rectangle().fill(Color.Vitals.cardBorder).frame(width: geo.size.width * CGFloat(freeRatio))
+                            }
+                            .cornerRadius(6)
+                        }
+                        .frame(height: 12)
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.bottom, 10)
                     
                     LazyVGrid(columns: columns, spacing: 20) {
                         
@@ -115,39 +167,61 @@ struct OverviewView: View {
                             color: .Vitals.neonPink,
                             progress: viewModel.systemUsage != nil ? (viewModel.systemUsage!.cpuLoad / 100.0) : 0.0
                         )
+                        
+                        SummaryCardView(
+                            title: "Disk Read",
+                            value: viewModel.diskIOStats != nil ? formatSpeed(viewModel.diskIOStats!.readSpeedBytes) : "Calc...",
+                            icon: "externaldrive.badge.person.crop",
+                            color: .Vitals.neonGreen,
+                            progress: 1.0
+                        )
+                        
+                        SummaryCardView(
+                            title: "Disk Write",
+                            value: viewModel.diskIOStats != nil ? formatSpeed(viewModel.diskIOStats!.writeSpeedBytes) : "Calc...",
+                            icon: "externaldrive.badge.icloud",
+                            color: .Vitals.neonYellow,
+                            progress: 1.0
+                        )
+                        
+                        SummaryCardView(
+                            title: "Swap Memory",
+                            value: viewModel.systemUsage != nil ? String(format: "%.1f GB", viewModel.systemUsage!.swapUsed) : "Calc...",
+                            icon: "arrow.left.arrow.right",
+                            color: .Vitals.neonYellow,
+                            progress: viewModel.systemUsage != nil ? (viewModel.systemUsage!.swapUsed / 4.0) : 0.0
+                        )
+                        
+                        SummaryCardView(
+                            title: "Thermal State",
+                            value: viewModel.systemUsage != nil ? viewModel.systemUsage!.thermalState : "Calc...",
+                            icon: "thermometer.sun.fill",
+                            color: viewModel.systemUsage?.thermalState == "Normal" ? .Vitals.neonGreen : .Vitals.neonPink,
+                            progress: viewModel.systemUsage != nil ? (viewModel.systemUsage!.thermalState == "Normal" ? 0.2 : 0.9) :
+                                0.0
+                        )
                     }
                     
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("SYSTEM QUICK ACTIONS")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
-                            .foregroundColor(.Vitals.textSecondary)
-                            .tracking(2)
-                            .padding(.top, 20)
-                        
-                        HStack(spacing: 20) {
-                            QuickActionButton(icon: "memorychip", title: "Free Up RAM", color: .Vitals.neonPink)
-                            QuickActionButton(icon: "trash", title: "Scan Cache", color: .Vitals.neonYellow)
-                            QuickActionButton(icon: "bolt.batteryblock", title: "Low Power", color: .Vitals.neonTeal)
-                        }
+                    TopProcessesView(processes: viewModel.topProcesses) { pid in
+                        viewModel.forceQuitProcess(pid: pid)
                     }
                     
                     HStack {
-                        SpecBadge(title: "Architecture", value: "ARM64 (Apple Silicon)")
+                        SpecBadge(title: "Architecture", value: info.cpuArchitecture)
                         Spacer()
-                        SpecBadge(title: "OS Build", value: "macOS 14.x")
+                        SpecBadge(title: "OS Build", value: info.osVersion)
                         Spacer()
-                        SpecBadge(title: "Total Cores", value: "8 Cores")
+                        SpecBadge(title: "Total Cores", value: "\(info.totalCores) Cores")
                     }
-                    .padding(20)
+                    .padding(16)
                     .background(Color.Vitals.cardBackground)
                     .cornerRadius(12)
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
-                    .padding(.top, 20)
                 }
                 
                 Spacer()
             }
-            .padding(40)
+            .padding(24)
         }
         .frame(minWidth: 700, minHeight: 500)
         .background(Color.Vitals.background)
@@ -161,63 +235,12 @@ struct OverviewView: View {
         formatter.countStyle = .file
         return formatter.string(fromByteCount: Int64(bytes))
     }
-}
-
-struct QuickActionButton: View {
-    var icon: String
-    var title: String
-    var color: Color
-    @State private var isHovered = false
-    @State private var isExecuting = false
-    @State private var isDone = false
     
-    var body: some View {
-        Button(action: {
-            guard !isExecuting else { return }
-            isExecuting = true
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                isExecuting = false
-                isDone = true
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    isDone = false
-                }
-            }
-        }) {
-            HStack(spacing: 12) {
-                if isExecuting {
-                    ProgressView()
-                        .scaleEffect(0.7)
-                        .tint(color)
-                } else {
-                    Image(systemName: isDone ? "checkmark" : icon)
-                        .font(.system(size: 16))
-                        .foregroundColor(isDone ? .green : color)
-                        .shadow(color: isHovered ? color : .clear, radius: 5)
-                }
-                
-                Text(isExecuting ? "Executing..." : (isDone ? "Done!" : title))
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(isDone ? .green : .Vitals.textPrimary)
-            }
-            .padding(.vertical, 16)
-            .padding(.horizontal, 24)
-            .frame(maxWidth: .infinity)
-            .background(Color.Vitals.cardBackground)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isDone ? Color.green : (isHovered ? color.opacity(0.5) : Color.Vitals.cardBorder), lineWidth: 1)
-            )
-            .shadow(color: isHovered && !isDone ? color.opacity(0.2) : .clear, radius: 10)
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isHovered = hovering
-            }
-        }
+    private func formatSpeed(_ bytes: UInt64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useBytes, .useKB, .useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(bytes)) + "/s"
     }
 }
 
@@ -238,3 +261,112 @@ struct SpecBadge: View {
         }
     }
 }
+
+struct TopProcessesView: View {
+    var processes: [ProcessEntity]
+    var onKillProcess: (Int) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("TOP PROCESSES")
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .foregroundColor(.Vitals.textSecondary)
+                .tracking(1)
+            
+            if processes.isEmpty {
+                Text("Fetching process data...")
+                    .font(.subheadline)
+                    .foregroundColor(.Vitals.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(Array(processes.enumerated()), id: \.element.pid) { index, process in
+                        ProcessRow(
+                            name: process.name,
+                            cpu: String(format: "%.1f%%", process.cpuUsage),
+                            memory: formatMemory(process.ramUsage),
+                            iconColor: getIconColor(for: index)
+                        )
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                onKillProcess(process.pid)
+                            } label: {
+                                Label("Force Quit", systemImage: "xmark.octagon")
+                            }
+                        }
+                        
+                        if index < processes.count - 1 {
+                            Divider()
+                        }
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(Color.Vitals.cardBackground)
+        .cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+    }
+    
+    private func formatMemory(_ kilobytes: Double) -> String {
+        let mb = kilobytes / 1024.0
+        if mb > 1024 {
+            return String(format: "%.1f GB", mb / 1024.0)
+        }
+        return String(format: "%.0f MB", mb)
+    }
+    
+    private func getIconColor(for index: Int) -> Color {
+        let colors: [Color] = [.Vitals.neonPink, .Vitals.neonTeal, .Vitals.neonYellow]
+        return colors[index % colors.count]
+    }
+    
+    struct ProcessRow: View {
+        var name: String
+        var cpu: String
+        var memory: String
+        var iconColor: Color
+        
+        var body: some View {
+            HStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: 28, height: 28)
+                    .overlay(
+                        Image(systemName: "app.fill")
+                            .foregroundColor(iconColor)
+                            .font(.system(size: 14))
+                    )
+                
+                Text(name)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundColor(.Vitals.textPrimary)
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(cpu)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(Color(red: 0.9, green: 0.3, blue: 0.3))
+                    
+                    Text("CPU")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(.Vitals.textSecondary)
+                }
+                .frame(width: 60, alignment: .trailing)
+                
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(memory)
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundColor(.Vitals.neonTeal)
+                    Text("RAM")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(.Vitals.textSecondary)
+                }
+                .frame(width: 70, alignment: .trailing)
+            }
+        }
+    }
+}
+
+

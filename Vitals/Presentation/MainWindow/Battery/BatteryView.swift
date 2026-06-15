@@ -14,7 +14,10 @@ struct BatteryView: View {
     
     init() {
         let container = DIContainer()
-        _viewModel = StateObject(wrappedValue: BatteryViewModel(getBatteryInfoUseCase: container.getBatteryInfoUseCase))
+        _viewModel = StateObject(wrappedValue: BatteryViewModel(
+            getBatteryInfoUseCase: container.getBatteryInfoUseCase,
+            getEnergyAppsUseCase: container.getEnergyAppsUseCase
+        ))
     }
     
     var body: some View {
@@ -122,78 +125,147 @@ struct BatteryView: View {
                 
                 if let battery = viewModel.batteryInfo {
                     HStack(spacing: 24) {
-                        DiagnosticCard(icon: "bolt.car.fill", title: "POWER DRAW", value: battery.isCharging ? "45.2 W" : "-12.5 W", subtitle: battery.isCharging ? "Supplied via USB-C" : "Discharging", color: .Vitals.neonYellow)
+                        let powerStr = String(format: "%.1f W", abs(battery.powerDraw))
+                        let powerSubtitle = battery.powerDraw > 0 ? "Supplied via Adapter" : "Discharging"
+                        DiagnosticCard(icon: "bolt.car.fill", title: "POWER DRAW", value: powerStr, subtitle: powerSubtitle, color: .
+                                       Vitals.neonYellow)
                         
-                        DiagnosticCard(icon: "thermometer.medium", title: "TEMPERATURE", value: "34°C", subtitle: "Normal Range", color: .Vitals.neonPink)
+                        let tempStr = battery.temperature > 0 ? String(format: "%.1f°C", battery.temperature) : "N/A"
+                        DiagnosticCard(icon: "thermometer.medium", title: "TEMPERATURE", value: tempStr, subtitle: "Internal Sensor",
+                                       color: .Vitals.neonPink)
                         
                         let condition = battery.healthPercentage > 80 ? "Normal" : "Replace Soon"
                         let conditionColor = battery.healthPercentage > 80 ? Color.Vitals.neonGreen : Color.Vitals.neonPink
-                        DiagnosticCard(icon: "checkmark.seal.fill", title: "CONDITION", value: condition, subtitle: String(format: "Health: %.1f%%", battery.healthPercentage), color: conditionColor)
+                        DiagnosticCard(icon: "checkmark.seal.fill", title: "CONDITION", value: condition, subtitle: String(format:
+                                                                                                                            "Health: %.1f%%", battery.healthPercentage), color: conditionColor)
                         
-                        DiagnosticCard(icon: "timer", title: "TIME REMAINING", value: battery.isCharging ? "1h 20m" : "4h 15m", subtitle: battery.isCharging ? "Until Full" : "Until Empty", color: .Vitals.neonTeal)
+                        let timeStr = battery.timeRemaining > 0 && battery.timeRemaining < 1000 ? "\(battery.timeRemaining / 60)h \(battery.timeRemaining % 60)m" : "Calculating..."
+                        DiagnosticCard(icon: "timer", title: "TIME REMAINING", value: timeStr, subtitle: battery.isCharging ? "Until Full" : "Until Empty", color: .Vitals.neonTeal)
                     }
                 }
                 
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack {
-                        Text("Usage History (Last 24 Hours)")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .foregroundColor(.Vitals.textPrimary)
-                        Spacer()
-                        Image(systemName: "chart.xyaxis.line")
-                            .foregroundColor(.Vitals.neonTeal)
-                    }
-                    
-                    if viewModel.historyPoints.isEmpty {
-                        Text("Belum ada data historis yang terkumpul.")
-                            .foregroundColor(.Vitals.textSecondary)
-                    } else {
-                        Chart(viewModel.historyPoints) { point in
-                            LineMark(
-                                x: .value("Waktu", point.timestamp),
-                                y: .value("Level", point.percentage)
-                            )
-                            .interpolationMethod(.monotone)
-                            .foregroundStyle(Color.Vitals.neonTeal)
-                            .lineStyle(StrokeStyle(lineWidth: 3))
-                            
-                            AreaMark(
-                                x: .value("Waktu", point.timestamp),
-                                y: .value("Level", point.percentage)
-                            )
-                            .interpolationMethod(.monotone)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color.Vitals.neonTeal.opacity(0.4), Color.clear]),
-                                    startPoint: .top,
-                                    endPoint: .bottom
+                HStack(alignment: .top, spacing: 24) {
+                    // History Chart
+                    VStack(alignment: .leading, spacing: 20) {
+                        HStack {
+                            Text("Usage History")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(.Vitals.textPrimary)
+                            Spacer()
+                            Image(systemName: "chart.xyaxis.line")
+                                .foregroundColor(.Vitals.neonTeal)
+                        }
+                        
+                        if viewModel.historyPoints.isEmpty {
+                            Text("Belum ada data historis yang terkumpul.")
+                                .foregroundColor(.Vitals.textSecondary)
+                        } else {
+                            Chart(viewModel.historyPoints) { point in
+                                LineMark(
+                                    x: .value("Waktu", point.timestamp),
+                                    y: .value("Level", point.percentage)
                                 )
-                            )
-                        }
-                        .chartYScale(domain: 0...100)
-                        .frame(height: 250)
-                        .padding(.top, 10)
-                        .chartYAxis {
-                            AxisMarks(position: .leading) { _ in
-                                AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
-                                AxisTick().foregroundStyle(Color.Vitals.textSecondary)
-                                AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                                .interpolationMethod(.monotone)
+                                .foregroundStyle(Color.Vitals.neonTeal)
+                                .lineStyle(StrokeStyle(lineWidth: 3))
+                                
+                                AreaMark(
+                                    x: .value("Waktu", point.timestamp),
+                                    y: .value("Level", point.percentage)
+                                )
+                                .interpolationMethod(.monotone)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [Color.Vitals.neonTeal.opacity(0.4), Color.clear]),
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
                             }
-                        }
-                        .chartXAxis {
-                            AxisMarks() { _ in
-                                AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
-                                AxisTick().foregroundStyle(Color.Vitals.textSecondary)
-                                AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                            .chartYScale(domain: 0...100)
+                            .frame(height: 250)
+                            .padding(.top, 10)
+                            .chartYAxis {
+                                AxisMarks(position: .leading) { _ in
+                                    AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
+                                    AxisTick().foregroundStyle(Color.Vitals.textSecondary)
+                                    AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                                }
+                            }
+                            .chartXAxis {
+                                AxisMarks() { _ in
+                                    AxisGridLine().foregroundStyle(Color.Vitals.cardBorder)
+                                    AxisTick().foregroundStyle(Color.Vitals.textSecondary)
+                                    AxisValueLabel().foregroundStyle(Color.Vitals.textSecondary)
+                                }
                             }
                         }
                     }
+                    .padding(30)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.Vitals.cardBackground)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                    .cornerRadius(16)
+                    
+                    // Top Energy Apps
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Top Energy Impact")
+                                .font(.title3).fontWeight(.bold).foregroundColor(.Vitals.textPrimary)
+                            Spacer()
+                            Image(systemName: "bolt.fill")
+                                .foregroundColor(.Vitals.neonYellow)
+                        }
+                        .padding(20)
+                        
+                        HStack {
+                            Text("APP").frame(maxWidth: .infinity, alignment: .leading)
+                            Text("IMPACT").frame(width: 80, alignment: .trailing)
+                        }
+                        .font(.caption).foregroundColor(.Vitals.textSecondary).tracking(1)
+                        .padding(.horizontal, 20).padding(.bottom, 10)
+                        
+                        Divider().background(Color.Vitals.cardBorder)
+                        
+                        VStack(spacing: 0) {
+                            if viewModel.topEnergyApps.isEmpty {
+                                Text("Analyzing energy impact...")
+                                    .font(.caption).foregroundColor(.Vitals.textSecondary).padding(.vertical, 20)
+                            } else {
+                                ForEach(Array(viewModel.topEnergyApps.enumerated()), id: \.element.id) { index, app in
+                                    HStack {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: "app.fill")
+                                                .foregroundColor(.Vitals.neonYellow)
+                                            Text(app.name)
+                                                .foregroundColor(.Vitals.textPrimary)
+                                                .lineLimit(1)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        
+                                        Text(String(format: "%.1f", app.power))
+                                            .frame(width: 80, alignment: .trailing)
+                                            .foregroundColor(.Vitals.neonYellow)
+                                            .font(.system(.body, design: .monospaced))
+                                    }
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 20)
+                                    
+                                    if index < viewModel.topEnergyApps.count - 1 {
+                                        Divider().background(Color.Vitals.cardBorder)
+                                    }
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                    .frame(width: 350)
+                    .frame(maxHeight: .infinity)
+                    .background(Color.Vitals.cardBackground)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
+                    .cornerRadius(16)
                 }
-                .padding(30)
-                .background(Color.Vitals.cardBackground)
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.Vitals.cardBorder, lineWidth: 1))
-                .cornerRadius(16)
                 
                 Spacer()
             }

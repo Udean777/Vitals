@@ -17,6 +17,14 @@ final class DIContainer: ObservableObject {
     let getNetworkStatsUseCase: GetNetworkStatsUseCase
     let checkFDAUseCase: CheckFDAUseCase
     let scanDeveloperCachesUseCase: ScanDeveloperCachesUseCase
+    let getNetworkAppsUseCase: GetNetworkAppsUseCase
+    let scanLargeFilesUseCase: ScanLargeFilesUseCase
+    let notificationService: NotificationService
+    let systemAlertsUseCase: SystemAlertsUseCase
+    let exportSystemReportUseCase: ExportSystemReportUseCase
+    let killProcessUseCase: KillProcessUseCase
+    let getEnergyAppsUseCase: GetEnergyAppsUseCase
+    let getDiskIOUseCase: GetDiskIOUseCase
     
     init() {
         let systemStatsRepository = MacSystemStatsRepository()
@@ -37,5 +45,24 @@ final class DIContainer: ObservableObject {
         let cacheScannerRepository = MacCacheScannerRepository()
         self.checkFDAUseCase = DefaultCheckFDAUseCase(repository: cacheScannerRepository)
         self.scanDeveloperCachesUseCase = DefaultScanDeveloperCachesUseCase(repository: cacheScannerRepository)
+        
+        let networkAppsRepository = MacNetworkAppsRepository()
+        self.getNetworkAppsUseCase = GetNetworkAppsUseCaseImpl(repository: networkAppsRepository)
+        
+        let largeFilesRepo = MacLargeFilesRepository()
+        self.scanLargeFilesUseCase = ScanLargeFilesUseCaseImpl(repository: largeFilesRepo)
+        
+        self.notificationService = MacNotificationService()
+        self.systemAlertsUseCase = SystemAlertsUseCase(notificationService: self.notificationService)
+        self.exportSystemReportUseCase = ExportSystemReportUseCase()
+        
+        let macTopProcessesRepository = MacTopProcessesRepository()
+        self.killProcessUseCase = KillProcessUseCase(repository: macTopProcessesRepository)
+        
+        let energyAppsRepository = MacEnergyAppsRepository()
+        self.getEnergyAppsUseCase = GetEnergyAppsUseCaseImpl(repository: energyAppsRepository)
+        
+        let diskIORepository = MacDiskIORepository()
+        self.getDiskIOUseCase = GetDiskIOUseCaseImpl(repository: diskIORepository)
     }
 }

@@ -19,8 +19,11 @@ struct VitalsApp: App {
         _menuBarViewModel = StateObject(wrappedValue: MenuBarViewModel(
             systemStatsUseCase: container.systemStatsUseCase,
             getTopProcessesUseCase: container.getTopProcessesUseCase,
-            getBatteryInfoUseCase: container.getBatteryInfoUseCase
+            getBatteryInfoUseCase: container.getBatteryInfoUseCase,
+            systemAlertsUseCase: container.systemAlertsUseCase
         ))
+        
+        container.notificationService.requestAuthorization()
     }
     
     var body: some Scene {
@@ -126,6 +129,48 @@ struct VitalsApp: App {
                     }
                 }
                 
+                if !menuBarViewModel.devProcesses.isEmpty {
+                    Divider().padding(.top, 8)
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "hammer.fill")
+                                .font(.caption2)
+                                .foregroundColor(.purple)
+                            Text("DEV WORKLOAD")
+                                .font(.caption2)
+                                .foregroundColor(.purple)
+                                .tracking(1)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                        
+                        ForEach(menuBarViewModel.devProcesses) { process in
+                            HStack {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.purple.opacity(0.1))
+                                    .frame(width: 20, height: 20)
+                                    .overlay(
+                                        Image(systemName: "curlybraces")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(.purple)
+                                    )
+                                
+                                Text(process.name)
+                                    .font(.system(size: 13, design: .rounded))
+                                    .foregroundColor(.primary)
+                                    .lineLimit(1)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                
+                                Text(String(format: "%.0f%%", process.cpuUsage))
+                                    .font(.system(size: 13, design: .monospaced))
+                                    .foregroundColor(.purple)
+                            }
+                            .padding(.horizontal, 16)
+                        }
+                    }
+                }
+                
                 Divider().padding(.top, 16)
                 
                 VStack(alignment: .leading, spacing: 8) {
@@ -171,7 +216,9 @@ struct VitalsApp: App {
                     Spacer()
                     
                     MenuBarButton(icon: "waveform.path.ecg", title: "Activity Monitor", color: .blue) {
-                        NSWorkspace.shared.launchApplication("Activity Monitor")
+                        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.ActivityMonitor") {
+                            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+                        }
                     }
                 }
                 .padding(12)

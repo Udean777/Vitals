@@ -9,4 +9,5 @@ import Foundation
 
 protocol TopProcessesRepository {
     func getTopProcess(limit: Int) throws -> [ProcessEntity]
+    func killProcess(pid: Int) throws
 }

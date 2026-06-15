@@ -18,6 +18,9 @@ final class ComputeViewModel: ObservableObject {
     @Published var wiredMemory: Double = 0
     @Published var compressedMemory: Double = 0
     @Published var cachedFiles: Double = 0
+    @Published var swapUsed: Double = 0.0
+    @Published var thermalState: String = "Normal"
+    @Published var memoryPressure: MemoryPressureLevel = .normal
     
     private let systemStatsUseCase: SystemStatsUseCase
     private let getTopProcessesUseCase: GetTopProcessesUseCase
@@ -26,12 +29,16 @@ final class ComputeViewModel: ObservableObject {
     init(systemStatsUseCase: SystemStatsUseCase, getTopProcessesUseCase: GetTopProcessesUseCase) {
         self.systemStatsUseCase = systemStatsUseCase
         self.getTopProcessesUseCase = getTopProcessesUseCase
+        self.memoryPressure = memoryPressure
     }
     
     func startMonitoring() {
         fetchData()
         
-        timer = Timer.publish(every: 2.0, on: .main, in: .common)
+        let interval = UserDefaults.standard.double(forKey: "refreshIntervalSeconds")
+        let safeInterval = interval > 0 ? interval : 1.0
+        
+        timer = Timer.publish(every: safeInterval, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in self?.fetchData() }
     }
@@ -49,6 +56,8 @@ final class ComputeViewModel: ObservableObject {
             self.wiredMemory = stats.wiredMemory
             self.compressedMemory = stats.compressedMemory
             self.cachedFiles = stats.cachedFiles
+            self.swapUsed = stats.swapUsed
+            self.thermalState = stats.thermalState
         }
         
         self.topProcess = (try? getTopProcessesUseCase.execute(limit: 10)) ?? []

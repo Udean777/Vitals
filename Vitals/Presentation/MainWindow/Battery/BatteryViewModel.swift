@@ -13,14 +13,17 @@ final class BatteryViewModel: ObservableObject {
     @Published var batteryInfo: BatteryInfo?
     @Published var errorMessage: String?
     @Published var historyPoints: [BatteryHistoryPoint] = []
+    @Published var topEnergyApps: [EnergyAppEntity] = []
+    @Published var isFetchingEnergy: Bool = false
     
     private let getBatteryInfoUseCase: GetBatteryInfoUseCase
+    nonisolated private let getEnergyAppsUseCase: GetEnergyAppsUseCase
     private let historyRepo = LocalBatteryHistoryRepository()
     private var timer: AnyCancellable?
     
-    init(getBatteryInfoUseCase: GetBatteryInfoUseCase) {
+    init(getBatteryInfoUseCase: GetBatteryInfoUseCase, getEnergyAppsUseCase: GetEnergyAppsUseCase) {
         self.getBatteryInfoUseCase = getBatteryInfoUseCase
-        historyRepo.generateMockDataIfNeeded()
+        self.getEnergyAppsUseCase = getEnergyAppsUseCase
     }
     
     func startMonitoring() {
@@ -45,6 +48,21 @@ final class BatteryViewModel: ObservableObject {
             if let validInfo = info {
                 historyRepo.addPoint(percentage: validInfo.currentPercentage)
                 self.historyPoints = historyRepo.getHistory()
+            }
+        }
+        
+        guard !isFetchingEnergy else { return }
+        isFetchingEnergy = true
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            let apps = self.getEnergyAppsUseCase.execute(limit: 5)
+            
+            DispatchQueue.main.async {
+                if !apps.isEmpty {
+                    self.topEnergyApps = apps
+                }
+                self.isFetchingEnergy = false
             }
         }
     }

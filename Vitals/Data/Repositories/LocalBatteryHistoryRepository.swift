@@ -10,6 +10,8 @@ import Foundation
 final class LocalBatteryHistoryRepository {
     private let storageKey = "vitals_battery_history_v1"
     
+    private let retentionPeriod: TimeInterval = 604800
+    
     func getHistory() -> [BatteryHistoryPoint] {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
               let history = try? JSONDecoder().decode([BatteryHistoryPoint].self, from: data) else {
@@ -28,8 +30,8 @@ final class LocalBatteryHistoryRepository {
         let newPoint = BatteryHistoryPoint(timestamp: Date(), percentage: percentage)
         history.append(newPoint)
         
-        let twentyFourHoursAgo = Date().addingTimeInterval(-86400)
-        history = history.filter { $0.timestamp > twentyFourHoursAgo }
+        let retentionLimit = Date().addingTimeInterval(-retentionPeriod)
+        history = history.filter { $0.timestamp > retentionLimit }
         
         save(history)
     }
@@ -40,7 +42,8 @@ final class LocalBatteryHistoryRepository {
         if history.isEmpty {
             let now = Date()
             var simulatedLevel = 100.0
-            for i in (0..<24).reversed() {
+            
+            for i in (0..<168).reversed() { // 168 jam = 7 hari
                 let time = now.addingTimeInterval(TimeInterval(-i * 3600))
                 simulatedLevel -= Double.random(in: 2...8)
                 if simulatedLevel <= 20 { simulatedLevel = 100 }
